@@ -1,0 +1,174 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+Element providing solution to no problem in particular.
+
+##### Example
+
+    <th-data-table></th-data-table>
+
+@element th-data-table
+@blurb Element providing solution to no problem in particular.
+@status alpha
+@homepage http://polymerlabs.github.io/th-data-table
+-->
+<polymer-element name="th-data-table" attributes="input output">
+
+  <template>
+    <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
+    <style>
+      :host {
+        width: 100%;
+        height: 100%;
+      }
+      #select {
+        background-color: #ddd;
+        padding: 5px;
+        display: inline-block;
+        cursor: pointer;
+      }
+      td.current-selection {
+        background-color: lightblue;
+      }
+    </style>
+    
+    <div id="table"></div>
+    <div id="select" on-click="{{selectOutput}}">Use Selection</div>
+
+  </template>
+  <script src="../../handsontable/dist/handsontable.full.js"></script>
+  <script>
+
+    Polymer({
+
+      // input: [
+      //     ["Metro", "2013 Q3", "2014 Q3"],
+      //     ["Abilene, TX", 139000, 142000],
+      //     ["Akron, OH", 125300, 126000],
+      //     ["Albany-Schenectady-Troy, NY", 205800, 208800]
+      //   ],
+      input: [
+        {"label": "asdasd", "value": 2134},
+        {"label": "asdasdasd", "value": 2333},
+        {"label": "asda", "value": 1234},
+        {"label": "asdaahdhsd", "value": 2124}
+      ],
+      // input: [[]],
+      outputType: "json", // table or json
+      attached: function() {
+        var self = this;
+        var container = self.$.table;
+        
+        // Convert input to correct data structure, if need be
+        self.convertInput();
+
+        // Create empty table
+        self.table = new Handsontable(container,
+          {
+            data: self.tableData,
+            // minSpareRows: 1,
+            // minSpareCols: 1,
+            minRows: 4,
+            minCols: 5,
+            width: 500,
+            colHeaders: false,
+            contextMenu: true,
+            manualColumnResize: true,
+            afterChange: function(changes, source) {
+              self.dataChanged();
+            },
+            afterSelectionEnd: function(rowStart, colStart, rowEnd, colEnd){
+              console.log("selection made");
+              self.selectData(rowStart, colStart, rowEnd, colEnd);
+            }
+          });
+      },
+      convertInput: function(){
+        var self = this;
+
+        // Convert to array of arrays if not in that format
+        if(self.input && self.input[0].constructor != Array){
+          self.tableData = [Object.keys(self.input[0])];
+          for(var i=0;i<self.input.length;i++){
+            var row = [];
+            for(var key in self.input[i]){  row.push(self.input[i][key]); }
+            self.tableData.push(row);
+          }
+        // Otherwise, set tableData equal to input
+        } else {
+
+          self.tableData = self.input;
+        }
+        // TODO: Handle other scenarios
+      },
+      dataChanged: function(){
+        var self = this;
+        if(self.table){
+          self.output = self.outputType =='json' ? self.tableToJSON(self.table.getData()) : self.table.getData();
+          console.log(self.output)
+        }
+      },
+      inputChanged: function(){
+        var self = this;
+        if(self.input.length>0){
+          self.convertInput();
+          self.table.loadData(self.tableData);
+        }
+      },
+      selectData: function(rowStart, colStart, rowEnd, colEnd){
+        var self = this;
+        
+        // Selects data in selected area
+        self.currentSelection = self.table.getData(rowStart, colStart, rowEnd, colEnd);
+        
+        // Selects DOM <td> elements in selected area
+        self.selectedCells = self.shadowRoot.querySelectorAll('td.area');
+      },
+      selectOutput: function(){
+        var self = this;
+        
+        // Clear highlighted section and re-highlight with current selection
+        self.clearSelection();
+        for(var i=0; i<self.selectedCells.length; i++){
+          self.selectedCells[i].classList.add('current-selection');
+        }
+
+        // Set output
+        if(self.outputType == 'json'){
+          self.output = self.tableToJSON(self.currentSelection);
+          console.log(self.output);
+        } else {
+          self.output = self.currentSelection;
+          console.log(self.output);
+        }
+      },
+      clearSelection: function(){
+        var self = this;
+        var allCells = self.shadowRoot.querySelectorAll('td');
+        for (var i=0; i<allCells.length; i++){
+          allCells[i].classList.remove('current-selection');
+        }
+      },
+      tableToJSON: function(tableData){
+        var self = this;
+          var json = [];
+          for(var i=1; i<tableData.length; i++){
+            var row = {};
+            for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
+              if(tableData[0][index]){ // this condition leaves out blank columns
+                row[tableData[0][index]] = tableData[i][index]; 
+              }
+            }
+            json.push(row);
+          }
+          return json;
+
+      },
+      outputChanged: function(){
+        console.log("OUTPUT CHANGED")
+      }
+    });
+
+  </script>
+
+</polymer-element>
