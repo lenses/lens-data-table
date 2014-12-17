@@ -47,13 +47,13 @@ Element providing solution to no problem in particular.
       //     ["Akron, OH", 125300, 126000],
       //     ["Albany-Schenectady-Troy, NY", 205800, 208800]
       //   ],
-      input: [
-        {"label": "asdasd", "value": 2134},
-        {"label": "asdasdasd", "value": 2333},
-        {"label": "asda", "value": 1234},
-        {"label": "asdaahdhsd", "value": 2124}
-      ],
-      // input: [[]],
+      // input: [
+      //   {"label": "asdasd", "value": 2134},
+      //   {"label": "asdasdasd", "value": 2333},
+      //   {"label": "asda", "value": 1234},
+      //   {"label": "asdaahdhsd", "value": 2124}
+      // ],
+      input: [[]],
       outputType: "json", // table or json
       attached: function() {
         var self = this;
@@ -85,10 +85,13 @@ Element providing solution to no problem in particular.
       },
       convertInput: function(){
         var self = this;
-
+        console.log("*!*!*!");
+        console.log(self.input);
         // Convert to array of arrays if not in that format
         if(self.input && self.input[0].constructor != Array){
           self.tableData = [Object.keys(self.input[0])];
+          console.log("###")
+          console.log(self.tableData);
           for(var i=0;i<self.input.length;i++){
             var row = [];
             for(var key in self.input[i]){  row.push(self.input[i][key]); }
@@ -96,21 +99,25 @@ Element providing solution to no problem in particular.
           }
         // Otherwise, set tableData equal to input
         } else {
-
+          console.log(self.input);
           self.tableData = self.input;
+
         }
         // TODO: Handle other scenarios
       },
       dataChanged: function(){
         var self = this;
         if(self.table){
-          self.output = self.outputType =='json' ? self.tableToJSON(self.table.getData()) : self.table.getData();
+          // don't auto update output right now -- it should be intentional
+          // self.output = self.outputType =='json' ? self.tableToJSON(self.table.getData()) : self.table.getData();
           console.log(self.output)
         }
       },
       inputChanged: function(){
         var self = this;
+        console.log("table input changed");
         if(self.input.length>0){
+          
           self.convertInput();
           self.table.loadData(self.tableData);
         }
@@ -144,7 +151,8 @@ Element providing solution to no problem in particular.
       },
       clearSelection: function(){
         var self = this;
-        var allCells = self.shadowRoot.querySelectorAll('td');
+        var allCells = self.shadowRoot.querySelectorAll('td'); 
+        // TODO: there is a bug -- if multiple tables on the same page, it clears the highlighting in the other ones also
         for (var i=0; i<allCells.length; i++){
           allCells[i].classList.remove('current-selection');
         }
