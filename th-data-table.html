@@ -28,7 +28,7 @@ Element providing solution to no problem in particular.
         cursor: pointer;
       }
       td.current-selection {
-        background-color: lightblue;
+        background-color: #D2E6F7;
       }
     </style>
     
@@ -76,6 +76,7 @@ Element providing solution to no problem in particular.
             colHeaders: false,
             contextMenu: true,
             manualColumnResize: true,
+            readOnly: self.readOnly,
             afterChange: function(changes, source) {
               self.dataChanged();
             },
