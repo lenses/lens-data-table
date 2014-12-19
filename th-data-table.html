@@ -12,7 +12,7 @@ Element providing solution to no problem in particular.
 @status alpha
 @homepage http://polymerlabs.github.io/th-data-table
 -->
-<polymer-element name="th-data-table" attributes="input output readOnly outputType">
+<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader">
 
   <template>
     <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
@@ -56,6 +56,7 @@ Element providing solution to no problem in particular.
       //   {"label": "asdaahdhsd", "value": 2124}
       // ],
       input: [[]],
+      firstRowIsHeader: false, 
       outputType: "json", // table or json
       readOnly: false,
       attached: function() {
@@ -64,7 +65,7 @@ Element providing solution to no problem in particular.
         
         // Convert input to correct data structure, if need be
         self.convertInput();
-
+        // self.colHeaders = self.firstRowIsHeader ? self.tableData[0] : true;
         // Create empty table
         self.table = new Handsontable(container,
           {
@@ -73,10 +74,12 @@ Element providing solution to no problem in particular.
             // minSpareCols: 1,
             minRows: 4,
             minCols: 5,
-            colHeaders: false,
-            contextMenu: true,
             manualColumnResize: true,
+            manualColumnMove: true,
+            observeChanges: true,
             readOnly: self.readOnly,
+            fillHandle: true,
+            colHeaders: true,
             afterChange: function(changes, source) {
               self.dataChanged();
             },
@@ -90,31 +93,61 @@ Element providing solution to no problem in particular.
         var self = this;
         console.log("table input changed");
         if(self.input.length>0){
-          
+          console.log("   CONVERT INPUT");
           self.convertInput();
+          console.log("LOAD DATA");
+          // var colHeaders = self.input[0].map(function(item, index) {return index;});
+// console.log(self.tableData);
+          // self.tableData.splice(0,0,colHeaders);
           self.table.loadData(self.tableData);
         }
       },
       convertInput: function(){
         var self = this;
-        console.log("*!*!*!");
+        console.log("****");
         console.log(self.input);
+        
         // Convert to array of arrays if not in that format
         if(self.input && self.input[0].constructor != Array){
-          self.tableData = [Object.keys(self.input[0])];
-          console.log("###")
-          console.log(self.tableData);
-          for(var i=0;i<self.input.length;i++){
-            var row = [];
-            for(var key in self.input[i]){  row.push(self.input[i][key]); }
-            self.tableData.push(row);
+          // Case 1: each item is an object
+          if (typeof(self.input[0])=='object'){
+            // if(self.firstRowIsHeader){
+              console.log("create headings");
+              console.log(Object.keys(self.input[0]));
+              console.log(self.tableData)      ;
+            self.tableData = [Object.keys(self.input[0])];
+            // }else{
+
+            // }
+            // console.log(self.tableData);
+            for(var i=0;i<self.input.length;i++){
+              var row = [];
+              for(var key in self.input[i]){  
+                console.log(key);
+                console.log(self.input[i][key]);
+                row.push(self.input[i][key]); }
+              self.tableData.push(row);
+            }
+            console.log(row);
+          // Case 2: each item is a string (only one column without a col title)
+          } else if(typeof(self.input[0])=='string'){
+            console.log("string");
+            self.tableData=[["Column1"]];
+            for(var i=0;i<self.input.length;i++){
+              self.tableData.push([self.input[i]]);
+            }
+
           }
+        
+        // Case 3: each item is probably an array and in the correct format already OR there is no input
         // Otherwise, set tableData equal to input
         } else {
-          console.log(self.input);
-          self.tableData = self.input;
-
+          console.log("arrays");
+         
+            self.tableData = self.input;
+          
         }
+
         // TODO: Handle other scenarios
       },
       dataChanged: function(){
@@ -126,6 +159,8 @@ Element providing solution to no problem in particular.
           }
           console.log(self.output)
         }
+        console.log("DATA CHANGED");
+
       },
       selectData: function(rowStart, colStart, rowEnd, colEnd){
         var self = this;
@@ -165,14 +200,26 @@ Element providing solution to no problem in particular.
       tableToJSON: function(tableData){
         var self = this;
           var json = [];
-          for(var i=1; i<tableData.length; i++){
-            var row = {};
-            for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
-              if(tableData[0][index]){ // this condition leaves out blank columns
-                row[tableData[0][index]] = tableData[i][index]; 
+          if(self.firstRowIsHeader){
+            for(var i=1; i<tableData.length; i++){
+              var row = {};
+              for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
+                if(tableData[0][index]){ // this condition leaves out blank columns
+                  row[tableData[0][index]] = tableData[i][index]; 
+                }
               }
+              json.push(row);
             }
-            json.push(row);
+          } else {
+            for(var i=0; i<tableData.length; i++){
+              var row = {};
+              for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
+                if(tableData[0][index]){ // this condition leaves out blank columns
+                  row["Column "+(index+1)] = tableData[i][index]; 
+                }
+              }
+              json.push(row);
+            }
           }
           return json;
 
