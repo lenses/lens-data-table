@@ -1,5 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
-
+<link rel="import" href="../core-icons/core-icons.html">
 <!--
 Element providing solution to no problem in particular.
 
@@ -12,7 +12,7 @@ Element providing solution to no problem in particular.
 @status alpha
 @homepage http://polymerlabs.github.io/th-data-table
 -->
-<polymer-element name="th-data-table" attributes="input output readOnly outputType">
+<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader">
 
   <template>
     <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
@@ -30,10 +30,29 @@ Element providing solution to no problem in particular.
       td.current-selection {
         background-color: #D2E6F7;
       }
+      core-icon {
+        cursor: pointer;
+      }
+
+      tr.title-row td{
+        
+        font-weight: 700;
+      }
+
+      .handsontable table.htCore {
+        width: 100%; /* necessary for collapsed tables to auto size columns */
+      }
+
     </style>
     
     <div id="table"></div>
     <template if="{{!readOnly}}">
+    <div>
+      <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
+      <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
+      First row represents column titles
+    </div> 
+    
       <div id="select" on-click="{{selectOutput}}">Use Selection</div>
     </template>
 
@@ -56,6 +75,7 @@ Element providing solution to no problem in particular.
       //   {"label": "asdaahdhsd", "value": 2124}
       // ],
       input: [[]],
+      firstRowIsHeader: true, 
       outputType: "json", // table or json
       readOnly: false,
       attached: function() {
@@ -64,19 +84,22 @@ Element providing solution to no problem in particular.
         
         // Convert input to correct data structure, if need be
         self.convertInput();
-
+        
         // Create empty table
         self.table = new Handsontable(container,
           {
             data: self.tableData,
             // minSpareRows: 1,
-            // minSpareCols: 1,
+            // minSpareRowsCols: 1,
             minRows: 4,
             minCols: 5,
-            colHeaders: false,
-            contextMenu: true,
             manualColumnResize: true,
+            manualColumnMove: true,
+            observeChanges: true,
             readOnly: self.readOnly,
+            fillHandle: true,
+            colHeaders: true,
+            stretchH: 'all',
             afterChange: function(changes, source) {
               self.dataChanged();
             },
@@ -85,46 +108,62 @@ Element providing solution to no problem in particular.
               self.selectData(rowStart, colStart, rowEnd, colEnd);
             }
           });
+
+        // Bold the first row if it represents column titles
+        if (self.firstRowIsHeader){ 
+          self.shadowRoot.querySelectorAll('tr')[1].classList.add("title-row");
+        }
       },
       inputChanged: function(){
         var self = this;
-        console.log("table input changed");
+
         if(self.input.length>0){
-          
           self.convertInput();
           self.table.loadData(self.tableData);
         }
       },
       convertInput: function(){
         var self = this;
-        console.log("*!*!*!");
-        console.log(self.input);
+          
         // Convert to array of arrays if not in that format
         if(self.input && self.input[0].constructor != Array){
-          self.tableData = [Object.keys(self.input[0])];
-          console.log("###")
-          console.log(self.tableData);
-          for(var i=0;i<self.input.length;i++){
-            var row = [];
-            for(var key in self.input[i]){  row.push(self.input[i][key]); }
-            self.tableData.push(row);
-          }
-        // Otherwise, set tableData equal to input
-        } else {
-          console.log(self.input);
-          self.tableData = self.input;
+          // Case 1: each item is an object
+          if (typeof(self.input[0])=='object'){
+            // If the object keys are just numbers, don't show them, otherwise do  
+            self.tableData = (Object.keys(self.input[0]))[0] == ["0"] ? [] : [Object.keys(self.input[0])];
 
+            for(var i=0;i<self.input.length;i++){
+              var row = [];
+              for(var key in self.input[i]){  
+                row.push(self.input[i][key]); }
+              self.tableData.push(row);
+            }
+
+          // Case 2: each item is a string (only one column without a col title)
+          } else if(typeof(self.input[0])=='string'){            
+            self.tableData=[];
+            for(var i=0;i<self.input.length;i++){
+              self.tableData.push([self.input[i]]);
+            }
+          }
+        
+        // Case 3: each item is probably an array and in the correct format already OR there is no input
+        } else {
+            // Otherwise, set tableData equal to input
+            self.tableData = self.input;
+          
         }
+
         // TODO: Handle other scenarios
       },
       dataChanged: function(){
         var self = this;
+        
         if(self.table){
-          // don't auto update output right now -- it should be intentional
+          // don't auto update output unless it is read-only -- it should be intentional
           if (self.readOnly){
             self.output = self.outputType =='json' ? self.tableToJSON(self.table.getData()) : self.table.getData();
           }
-          console.log(self.output)
         }
       },
       selectData: function(rowStart, colStart, rowEnd, colEnd){
@@ -157,28 +196,45 @@ Element providing solution to no problem in particular.
       clearSelection: function(){
         var self = this;
         var allCells = self.shadowRoot.querySelectorAll('td'); 
-        // TODO: there is a bug -- if multiple tables on the same page, it clears the highlighting in the other ones also
         for (var i=0; i<allCells.length; i++){
           allCells[i].classList.remove('current-selection');
         }
       },
       tableToJSON: function(tableData){
         var self = this;
+        
           var json = [];
-          for(var i=1; i<tableData.length; i++){
-            var row = {};
-            for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
-              if(tableData[0][index]){ // this condition leaves out blank columns
-                row[tableData[0][index]] = tableData[i][index]; 
+          if(self.firstRowIsHeader){
+        
+            for(var i=1; i<tableData.length; i++){
+              var row = {};
+              for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
+                if(tableData[0][index]){ // this condition leaves out blank columns
+                  row[tableData[0][index]] = tableData[i][index]; 
+                }
               }
+              json.push(row);
             }
-            json.push(row);
+          } else {
+            for(var i=0; i<tableData.length; i++){
+              var row = {};
+              for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
+                if(tableData[0][index]){ // this condition leaves out blank columns
+                  row[index] = tableData[i][index]; 
+                }
+              }
+              json.push(row);
+            }
           }
           return json;
 
       },
-      outputChanged: function(){
-        console.log("OUTPUT CHANGED")
+      toggleFirstRow: function(){
+        var self = this;
+        self.firstRowIsHeader = self.firstRowIsHeader == true ? false : true;
+        var firstRow = self.shadowRoot.querySelectorAll('tr')[1];
+        firstRow.classList.toggle("title-row");
+    
       }
     });
 
