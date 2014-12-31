@@ -39,6 +39,10 @@ Element providing solution to no problem in particular.
         font-weight: 700;
       }
 
+      .handsontable table.htCore {
+        width: 100%; /* necessary for collapsed tables to auto size columns */
+      }
+
     </style>
     
     <div id="table"></div>
@@ -95,6 +99,7 @@ Element providing solution to no problem in particular.
             readOnly: self.readOnly,
             fillHandle: true,
             colHeaders: true,
+            stretchH: 'all',
             afterChange: function(changes, source) {
               self.dataChanged();
             },
