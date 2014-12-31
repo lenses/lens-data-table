@@ -1,5 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
-
+<link rel="import" href="../core-icons/core-icons.html">
 <!--
 Element providing solution to no problem in particular.
 
@@ -30,15 +30,30 @@ Element providing solution to no problem in particular.
       td.current-selection {
         background-color: #D2E6F7;
       }
+      core-icon {
+        cursor: pointer;
+      }
+
+      tr.title-row td{
+        
+        font-weight: 700;
+      }
+
     </style>
     
     <div id="table"></div>
     <template if="{{!readOnly}}">
+    <div>
+      <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
+      <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
+      First row represents column titles
+    </div> 
+    
       <div id="select" on-click="{{selectOutput}}">Use Selection</div>
     </template>
 
   </template>
-  <script src="../../handsontable/dist/handsontable.full.js"></script>
+  <script src="../handsontable/dist/handsontable.full.js"></script>
   <script>
 
     Polymer({
@@ -56,7 +71,7 @@ Element providing solution to no problem in particular.
       //   {"label": "asdaahdhsd", "value": 2124}
       // ],
       input: [[]],
-      firstRowIsHeader: false, 
+      firstRowIsHeader: true, 
       outputType: "json", // table or json
       readOnly: false,
       attached: function() {
@@ -65,13 +80,13 @@ Element providing solution to no problem in particular.
         
         // Convert input to correct data structure, if need be
         self.convertInput();
-        // self.colHeaders = self.firstRowIsHeader ? self.tableData[0] : true;
+        
         // Create empty table
         self.table = new Handsontable(container,
           {
             data: self.tableData,
             // minSpareRows: 1,
-            // minSpareCols: 1,
+            // minSpareRowsCols: 1,
             minRows: 4,
             minCols: 5,
             manualColumnResize: true,
@@ -88,62 +103,48 @@ Element providing solution to no problem in particular.
               self.selectData(rowStart, colStart, rowEnd, colEnd);
             }
           });
+
+        // Bold the first row if it represents column titles
+        if (self.firstRowIsHeader){ 
+          self.shadowRoot.querySelectorAll('tr')[1].classList.add("title-row");
+        }
       },
       inputChanged: function(){
         var self = this;
-        console.log("table input changed");
+
         if(self.input.length>0){
-          console.log("   CONVERT INPUT");
           self.convertInput();
-          console.log("LOAD DATA");
-          // var colHeaders = self.input[0].map(function(item, index) {return index;});
-// console.log(self.tableData);
-          // self.tableData.splice(0,0,colHeaders);
           self.table.loadData(self.tableData);
         }
       },
       convertInput: function(){
         var self = this;
-        console.log("****");
-        console.log(self.input);
-        
+          
         // Convert to array of arrays if not in that format
         if(self.input && self.input[0].constructor != Array){
           // Case 1: each item is an object
           if (typeof(self.input[0])=='object'){
-            // if(self.firstRowIsHeader){
-              console.log("create headings");
-              console.log(Object.keys(self.input[0]));
-              console.log(self.tableData)      ;
-            self.tableData = [Object.keys(self.input[0])];
-            // }else{
+            // If the object keys are just numbers, don't show them, otherwise do  
+            self.tableData = (Object.keys(self.input[0]))[0] == ["0"] ? [] : [Object.keys(self.input[0])];
 
-            // }
-            // console.log(self.tableData);
             for(var i=0;i<self.input.length;i++){
               var row = [];
               for(var key in self.input[i]){  
-                console.log(key);
-                console.log(self.input[i][key]);
                 row.push(self.input[i][key]); }
               self.tableData.push(row);
             }
-            console.log(row);
+
           // Case 2: each item is a string (only one column without a col title)
-          } else if(typeof(self.input[0])=='string'){
-            console.log("string");
-            self.tableData=[["Column1"]];
+          } else if(typeof(self.input[0])=='string'){            
+            self.tableData=[];
             for(var i=0;i<self.input.length;i++){
               self.tableData.push([self.input[i]]);
             }
-
           }
         
         // Case 3: each item is probably an array and in the correct format already OR there is no input
-        // Otherwise, set tableData equal to input
         } else {
-          console.log("arrays");
-         
+            // Otherwise, set tableData equal to input
             self.tableData = self.input;
           
         }
@@ -152,15 +153,13 @@ Element providing solution to no problem in particular.
       },
       dataChanged: function(){
         var self = this;
+        
         if(self.table){
-          // don't auto update output right now -- it should be intentional
+          // don't auto update output unless it is read-only -- it should be intentional
           if (self.readOnly){
             self.output = self.outputType =='json' ? self.tableToJSON(self.table.getData()) : self.table.getData();
           }
-          console.log(self.output)
         }
-        console.log("DATA CHANGED");
-
       },
       selectData: function(rowStart, colStart, rowEnd, colEnd){
         var self = this;
@@ -192,15 +191,16 @@ Element providing solution to no problem in particular.
       clearSelection: function(){
         var self = this;
         var allCells = self.shadowRoot.querySelectorAll('td'); 
-        // TODO: there is a bug -- if multiple tables on the same page, it clears the highlighting in the other ones also
         for (var i=0; i<allCells.length; i++){
           allCells[i].classList.remove('current-selection');
         }
       },
       tableToJSON: function(tableData){
         var self = this;
+        
           var json = [];
           if(self.firstRowIsHeader){
+        
             for(var i=1; i<tableData.length; i++){
               var row = {};
               for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
@@ -215,7 +215,7 @@ Element providing solution to no problem in particular.
               var row = {};
               for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
                 if(tableData[0][index]){ // this condition leaves out blank columns
-                  row["Column "+(index+1)] = tableData[i][index]; 
+                  row[index] = tableData[i][index]; 
                 }
               }
               json.push(row);
@@ -224,8 +224,12 @@ Element providing solution to no problem in particular.
           return json;
 
       },
-      outputChanged: function(){
-        console.log("OUTPUT CHANGED")
+      toggleFirstRow: function(){
+        var self = this;
+        self.firstRowIsHeader = self.firstRowIsHeader == true ? false : true;
+        var firstRow = self.shadowRoot.querySelectorAll('tr')[1];
+        firstRow.classList.toggle("title-row");
+    
       }
     });
 
