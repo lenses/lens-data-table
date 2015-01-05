@@ -20,6 +20,7 @@ Element providing solution to no problem in particular.
       :host {
         width: 100%;
         height: 100%;
+        overflow: scroll;
       }
       #select {
         background-color: #ddd;
@@ -34,13 +35,16 @@ Element providing solution to no problem in particular.
         cursor: pointer;
       }
 
-      tr.title-row td{
-        
+      tr.title-row td{   
         font-weight: 700;
       }
 
       .handsontable table.htCore {
         width: 100%; /* necessary for collapsed tables to auto size columns */
+      }
+
+      .handsontable {
+         overflow: scroll;
       }
 
     </style>
@@ -99,12 +103,11 @@ Element providing solution to no problem in particular.
             readOnly: self.readOnly,
             fillHandle: true,
             colHeaders: true,
-            stretchH: 'all',
+            // stretchH: 'all',
             afterChange: function(changes, source) {
               self.dataChanged();
             },
             afterSelectionEnd: function(rowStart, colStart, rowEnd, colEnd){
-              console.log("selection made");
               self.selectData(rowStart, colStart, rowEnd, colEnd);
             }
           });
@@ -150,8 +153,7 @@ Element providing solution to no problem in particular.
         // Case 3: each item is probably an array and in the correct format already OR there is no input
         } else {
             // Otherwise, set tableData equal to input
-            self.tableData = self.input;
-          
+            self.tableData = self.input; 
         }
 
         // TODO: Handle other scenarios
@@ -232,8 +234,19 @@ Element providing solution to no problem in particular.
       toggleFirstRow: function(){
         var self = this;
         self.firstRowIsHeader = self.firstRowIsHeader == true ? false : true;
+      },
+      firstRowIsHeaderChanged: function(){
+        var self = this;
+        self.formatFirstRow();
+      },
+      formatFirstRow: function(){
+        var self = this;
         var firstRow = self.shadowRoot.querySelectorAll('tr')[1];
-        firstRow.classList.toggle("title-row");
+        if (self.firstRowIsHeader){
+          firstRow.classList.add("title-row");
+        } else {
+          firstRow.classList.remove("title-row");
+        }
     
       }
     });
