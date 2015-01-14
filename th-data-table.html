@@ -12,7 +12,7 @@ Element providing solution to no problem in particular.
 @status alpha
 @homepage http://polymerlabs.github.io/th-data-table
 -->
-<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader">
+<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader requireSelection">
 
   <template>
     <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
@@ -48,7 +48,12 @@ Element providing solution to no problem in particular.
         overflow: scroll;
       }
 
-            .htContextMenu {
+      .wtHolder, .ht_master, .wtHider, .wtSpreader {
+        width: 100% !important; /* handsontable hardcodes width inline, so this is to override! */
+      }
+
+
+      .htContextMenu {
         background-color: red;
         position: fixed;
         top: 0px;
@@ -60,13 +65,14 @@ Element providing solution to no problem in particular.
     
     <div id="table"></div>
     <template if="{{!readOnly}}">
-    <div>
-      <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
-      <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
-      First row represents column titles
-    </div> 
-    
-      <div id="select" on-click="{{selectOutput}}">Use Selection</div>
+      <div>
+        <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
+        <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
+        First row represents column titles
+      </div> 
+      <template if="{{requireSelection}}">
+        <div id="select" on-click="{{selectOutput}}">Use Selection</div>
+      </template>
     </template>
 
   </template>
@@ -88,6 +94,7 @@ Element providing solution to no problem in particular.
       //   {"label": "asdaahdhsd", "value": 2124}
       // ],
       input: [[]],
+      requireSelection: false,
       firstRowIsHeader: true, 
       outputType: "json", // table or json
       readOnly: false,
@@ -135,6 +142,8 @@ Element providing solution to no problem in particular.
           self.convertInput();
           self.table.loadData(self.tableData);
         }
+
+
       },
       convertInput: function(){
         var self = this;
@@ -174,7 +183,7 @@ Element providing solution to no problem in particular.
         
         if(self.table){
           // don't auto update output unless it is read-only -- it should be intentional
-          if (self.readOnly){
+          if (self.readOnly || !self.requireSelection){
             self.output = self.outputType =='json' ? self.tableToJSON(self.table.getData()) : self.table.getData();
           }
         }
@@ -223,10 +232,14 @@ Element providing solution to no problem in particular.
               var row = {};
               for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
                 if(tableData[0][index]){ // this condition leaves out blank columns
-                  row[tableData[0][index]] = tableData[i][index]; 
+                  if(tableData[i][index]){
+                    row[tableData[0][index]] = tableData[i][index]; 
+                  }
                 }
               }
-              json.push(row);
+              if (Object.keys(row).length > 0){ // this condition leaves out blank rows
+                json.push(row);
+              }
             }
           } else {
             for(var i=0; i<tableData.length; i++){
@@ -236,7 +249,9 @@ Element providing solution to no problem in particular.
                   row[index] = tableData[i][index]; 
                 }
               }
-              json.push(row);
+              if (Object.keys(row).length > 0){ // this condition leaves out blank rows
+                json.push(row);
+              }
             }
           }
           return json;
