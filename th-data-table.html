@@ -132,6 +132,7 @@ Element providing solution to no problem in particular.
             readOnly: self.minimal ? true : self.readOnly,
             fillHandle: true,
             colHeaders: self.minimal ? false : true,
+            copyPaste: self.minimal ? false : true,
             contextMenu: true,
             columnSorting: false, // this is tricky when the first row sometimes represents column headers
             comments: false, // adds comments to context menu, but they don't currently work
@@ -167,11 +168,15 @@ console.log('data table input changed!');
         if(self.input && self.input[0] && self.input[0].constructor != Array){
           // Case 1: each item is an object
           if (typeof(self.input[0])=='object'){
+
             // If the object keys are just numbers, don't show them, otherwise do  
             var keys = Object.keys(self.input[0]);
             self.tableData = keys[0] == ["0"] ? [] : [keys];
+            
+            // set maximum number of rows when in minimal mode.
+            var maxRows = self.minimal ? Math.min(50, self.input.length) : self.input.length;
+            for(var i=0;i<maxRows;i++){
 
-            for(var i=0;i<self.input.length;i++){
               var row = [];
               for(var index=0; index<keys.length; index++){
                 row.push(self.input[i][keys[index]]); }
