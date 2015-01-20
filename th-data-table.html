@@ -12,7 +12,9 @@ Element providing solution to no problem in particular.
 @status alpha
 @homepage http://polymerlabs.github.io/th-data-table
 -->
-<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader requireSelection">
+
+<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader minimal">
+
 
   <template>
     <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
@@ -68,12 +70,16 @@ Element providing solution to no problem in particular.
     <template if="{{output}}"><div class="row-count">{{output.length}} records</div></template>
     <div id="table"></div>
     <template if="{{!readOnly}}">
-      <div>
+
+    <div>
+      <template if="{{!minimal}}">
         <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
         <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
         First row represents column titles
-      </div> 
-      <template if="{{requireSelection}}">
+      </template>
+    </div> 
+    
+      <template if="{{!minimal}}">
         <div id="select" on-click="{{selectOutput}}">Use Selection</div>
       </template>
     </template>
@@ -98,6 +104,11 @@ Element providing solution to no problem in particular.
       // ],
       input: [[]],
       requireSelection: false,
+      /**
+       * Minimal table without edit (for th-connector)
+       * @type {Boolean}
+       */
+      minimal: false,
       firstRowIsHeader: true, 
       outputType: "json", // table or json
       readOnly: false,
@@ -114,14 +125,14 @@ Element providing solution to no problem in particular.
             data: self.tableData,
             // minSpareRows: 1,
             // minSpareRowsCols: 1,
-            minRows: 5,
-            minCols: 5,
+            minRows: self.minimal ? 0 : 5,
+            minCols: self.minimal ? 0 : 5,
             manualColumnResize: true,
-            manualColumnMove: true,
-            observeChanges: true,
-            readOnly: self.readOnly,
+            manualColumnMove: self.minimal ? false : true,
+            observeChanges: self.minimal ? false : true,
+            readOnly: self.minimal ? true : self.readOnly,
             fillHandle: true,
-            colHeaders: true,
+            colHeaders: self.minimal ? false : true,
             contextMenu: true,
             columnSorting: false, // this is tricky when the first row sometimes represents column headers
             comments: false, // adds comments to context menu, but they don't currently work
@@ -134,8 +145,9 @@ Element providing solution to no problem in particular.
           });
 
         // Bold the first row if it represents column titles
-        if (self.firstRowIsHeader){ 
-          self.shadowRoot.querySelectorAll('tr')[1].classList.add("title-row");
+        var rows = self.shadowRoot.querySelectorAll('tr');
+        if (self.firstRowIsHeader && rows.length>0){ 
+          rows[self.minimal ? 0 : 1].classList.add("title-row");
         }
       },
       inputChanged: function(){
