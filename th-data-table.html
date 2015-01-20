@@ -170,13 +170,16 @@ console.log('data table input changed!');
         if(self.input && self.input[0] && self.input[0].constructor != Array){
           // Case 1: each item is an object
           if (typeof(self.input[0])=='object'){
+
             // If the object keys are just numbers, don't show them, otherwise do  
 
-            self.tableData = (Object.keys(self.input[0]))[0] == ["0"] ? [] : [Object.keys(self.input[0])];
+            var keys = Object.keys(self.input[0]);
+            self.tableData = keys[0] == ["0"] ? [] : [keys];
             
             // set maximum number of rows when in minimal mode.
             var maxRows = self.minimal ? Math.min(50, self.input.length) : self.input.length;
             for(var i=0;i<maxRows;i++){
+
               var row = [];
               for(var index=0; index<keys.length; index++){
                 row.push(self.input[i][keys[index]]); }
