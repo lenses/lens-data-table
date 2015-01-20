@@ -121,6 +121,7 @@ Element providing solution to no problem in particular.
             readOnly: self.minimal ? true : self.readOnly,
             fillHandle: true,
             colHeaders: self.minimal ? false : true,
+            copyPaste: self.minimal ? false : true,
             contextMenu: true,
             columnSorting: false, // this is tricky when the first row sometimes represents column headers
             comments: false, // adds comments to context menu, but they don't currently work
@@ -150,13 +151,15 @@ Element providing solution to no problem in particular.
         var self = this;
           
         // Convert to array of arrays if not in that format
-        if(self.input && self.input[0].constructor != Array){
+        if(self.input && self.input[0] && self.input[0].constructor != Array){
           // Case 1: each item is an object
           if (typeof(self.input[0])=='object'){
             // If the object keys are just numbers, don't show them, otherwise do  
             self.tableData = (Object.keys(self.input[0]))[0] == ["0"] ? [] : [Object.keys(self.input[0])];
-
-            for(var i=0;i<self.input.length;i++){
+            
+            // set maximum number of rows when in minimal mode.
+            var maxRows = self.minimal ? Math.min(50, self.input.length) : self.input.length;
+            for(var i=0;i<maxRows;i++){
               var row = [];
               for(var key in self.input[i]){  
                 row.push(self.input[i][key]); }
