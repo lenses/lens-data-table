@@ -176,7 +176,6 @@ console.log('data table input changed!');
             // set maximum number of rows when in minimal mode.
             var maxRows = self.minimal ? Math.min(50, self.input.length) : self.input.length;
             for(var i=0;i<maxRows;i++){
-
               var row = [];
               for(var index=0; index<keys.length; index++){
                 row.push(self.input[i][keys[index]]); }
