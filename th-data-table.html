@@ -13,8 +13,7 @@ Element providing solution to no problem in particular.
 @homepage http://polymerlabs.github.io/th-data-table
 -->
 
-<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader minimal">
-
+<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader requireSelection minimal">
 
   <template>
     <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
@@ -70,7 +69,6 @@ Element providing solution to no problem in particular.
     <template if="{{output}}"><div class="row-count">{{output.length}} records</div></template>
     <div id="table"></div>
     <template if="{{!readOnly}}">
-
     <div>
       <template if="{{!minimal}}">
         <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
@@ -80,7 +78,10 @@ Element providing solution to no problem in particular.
     </div> 
     
       <template if="{{!minimal}}">
-        <div id="select" on-click="{{selectOutput}}">Use Selection</div>
+
+        <template if="{{requireSelection}}">
+          <div id="select" on-click="{{selectOutput}}">Use Selection</div>
+        </template>
       </template>
     </template>
 
