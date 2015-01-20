@@ -60,9 +60,12 @@ Element providing solution to no problem in particular.
         left: 0px;
         width: 300px;
       }
+      .row-count {
+        text-align: right;
+      }
 
     </style>
-    
+    <template if="{{output}}"><div class="row-count">{{output.length}} records</div></template>
     <div id="table"></div>
     <template if="{{!readOnly}}">
       <div>
@@ -211,10 +214,8 @@ console.log('data table input changed!');
         // Set output
         if(self.outputType == 'json'){
           self.output = self.tableToJSON(self.currentSelection);
-          console.log(self.output);
         } else {
           self.output = self.currentSelection;
-          console.log(self.output);
         }
       },
       clearSelection: function(){
@@ -251,8 +252,9 @@ console.log('data table input changed!');
                   row[index] = tableData[i][index]; 
                 }
               }
-              if (Object.keys(row).length > 0){ // this condition leaves out blank rows
-                json.push(row);
+              var columns = Object.keys(row);
+              if (columns.length > 0 || (columns.indexOf('0') > -1 && row['0'])){ // this condition leaves out blank rows 
+                  json.push(row);  
               }
             }
           }
@@ -266,6 +268,7 @@ console.log('data table input changed!');
       firstRowIsHeaderChanged: function(){
         var self = this;
         self.formatFirstRow();
+        self.dataChanged();
       },
       formatFirstRow: function(){
         var self = this;
@@ -277,6 +280,7 @@ console.log('data table input changed!');
         }
     
       }
+
     });
 
   </script>
