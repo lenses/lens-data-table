@@ -13,7 +13,7 @@ Element providing solution to no problem in particular.
 @homepage http://polymerlabs.github.io/th-data-table
 -->
 
-<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader requireSelection minimal">
+<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader requireSelection minimal minCols minRows">
 
   <template>
     <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
@@ -77,12 +77,9 @@ Element providing solution to no problem in particular.
       </template>
     </div> 
     
-      <template if="{{!minimal}}">
-
         <template if="{{requireSelection}}">
           <div id="select" on-click="{{selectOutput}}">Use Selection</div>
         </template>
-      </template>
     </template>
 
   </template>
@@ -113,10 +110,15 @@ Element providing solution to no problem in particular.
       firstRowIsHeader: true, 
       outputType: "json", // table or json
       readOnly: false,
+      minCols: 5,
+      minRows: 5,
       attached: function() {
         var self = this;
         var container = self.$.table;
 
+        // Adjust defaults depending on if in minimal mode or not
+        self.setDefaults();
+        
         // Convert input to correct data structure, if need be
         self.convertInput();
         
@@ -126,14 +128,14 @@ Element providing solution to no problem in particular.
             data: self.tableData,
             // minSpareRows: 1,
             // minSpareRowsCols: 1,
-            minRows: self.minimal ? 0 : 5,
-            minCols: self.minimal ? 0 : 5,
+            minRows: self.minRows,
+            minCols: self.minCols,
             manualColumnResize: true,
-            manualColumnMove: self.minimal ? false : true,
-            observeChanges: self.minimal ? false : true,
-            readOnly: self.minimal ? true : self.readOnly,
+            manualColumnMove: false,
+            observeChanges: true,
+            readOnly: self.readOnly,
             fillHandle: true,
-            colHeaders: self.minimal ? false : true,
+            colHeaders: false,
             copyPaste: self.minimal ? false : true,
             contextMenu: true,
             columnSorting: false, // this is tricky when the first row sometimes represents column headers
@@ -149,19 +151,30 @@ Element providing solution to no problem in particular.
         // Bold the first row if it represents column titles
         var rows = self.shadowRoot.querySelectorAll('tr');
         if (self.firstRowIsHeader && rows.length>0){ 
-          rows[self.minimal ? 0 : 1].classList.add("title-row");
+          rows[0].classList.add("title-row");
+        }
+      },
+      setDefaults: function(){
+        var self = this;
+        if (self.minimal){
+          self.minRows = 0;
+          self.minCols = 0;
+          self.readOnly = true;
+          self.requireSelection = false;
+          self.maxRows = Math.min(50, self.input.length) 
+        } else {
+          self.maxRows = self.input.length;
         }
       },
       inputChanged: function(){
         var self = this;
-console.log('data table input changed!');
+        console.log('data table input changed!');
         console.log(self.input);
         if(self.input && self.input.length>0){
+          self.maxRows = self.input.length;
           self.convertInput();
           self.table.loadData(self.tableData);
         }
-
-
       },
       convertInput: function(){
         var self = this;
@@ -177,9 +190,9 @@ console.log('data table input changed!');
             self.tableData = keys[0] == ["0"] ? [] : [keys];
             
             // set maximum number of rows when in minimal mode.
-            var maxRows = self.minimal ? Math.min(50, self.input.length) : self.input.length;
-            for(var i=0;i<maxRows;i++){
 
+            // var maxRows = self.minimal ? Math.min(50, self.input.length) : self.input.length;
+            for(var i=0;i<self.maxRows;i++){
               var row = [];
               for(var index=0; index<keys.length; index++){
                 row.push(self.input[i][keys[index]]); }
@@ -291,7 +304,7 @@ console.log('data table input changed!');
       },
       formatFirstRow: function(){
         var self = this;
-        var firstRow = self.shadowRoot.querySelectorAll('tr')[1];
+        var firstRow = self.shadowRoot.querySelectorAll('tr')[0];
         if (self.firstRowIsHeader){
           firstRow.classList.add("title-row");
         } else {
