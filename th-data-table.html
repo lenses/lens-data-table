@@ -1,5 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../core-icons/core-icons.html">
+<link rel="import" href="../core-input/core-input.html">
 <!--
 Element providing solution to no problem in particular.
 
@@ -13,7 +14,7 @@ Element providing solution to no problem in particular.
 @homepage http://polymerlabs.github.io/th-data-table
 -->
 
-<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader requireSelection minimal minCols minRows">
+<polymer-element name="th-data-table" attributes="input output readOnly outputType firstRowIsHeader requireSelection minimal minCols minRows pagination rowsPerPage">
 
   <template>
     <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
@@ -63,10 +64,19 @@ Element providing solution to no problem in particular.
       }
       .row-count {
         text-align: right;
+        display: inline-block;
+        float: right;
+      }
+      .page-number{
+        width: 10px;
+        background-color: #eee;
+        padding: 0;
+        margin: 0;
       }
 
     </style>
     <template if="{{output}}"><div class="row-count">{{output.length}} rows</div></template>
+    <template if="{{pagination}}"><div >Page <input style="border: 2px solid #eee; padding: 3px; width: 10px;" is="core-input" committedValue="{{currentPage}}" placeholder="{{currentPage}}" type="text"> of {{numPages}} (showing rows {{startRow}} to {{endRow}})</div></template>
     <div id="table"></div>
     <template if="{{!readOnly}}">
     <div>
@@ -101,6 +111,10 @@ Element providing solution to no problem in particular.
       //   {"label": "asdaahdhsd", "value": 2124}
       // ],
       input: [[]],
+      pagination: true,
+      rowsPerPage: 20,
+      currentPage: 1,
+      numPages: 1, 
       requireSelection: false,
       /**
        * Minimal table without edit (for th-connector)
@@ -142,6 +156,10 @@ Element providing solution to no problem in particular.
             comments: false, // adds comments to context menu, but they don't currently work
             afterChange: function(changes, source) {
               self.dataChanged();
+              if(source =='paste'){
+                self.input = this.getInstance().getData();
+                self.table.loadData(self.paginate(self.input));
+              }
             },
             afterSelectionEnd: function(rowStart, colStart, rowEnd, colEnd){
               self.selectData(rowStart, colStart, rowEnd, colEnd);
@@ -171,10 +189,45 @@ Element providing solution to no problem in particular.
         console.log('data table input changed!');
         console.log(self.input);
         if(self.input && self.input.length>0){
+          self.numPages = Math.ceil(self.input.length / self.rowsPerPage);
           self.maxRows = self.input.length;
           self.convertInput();
-          self.table.loadData(self.tableData);
+          self.tableDataPaginated = self.paginate(self.tableData);
+          self.table.loadData(self.tableDataPaginated);
         }
+      },
+      currentPageChanged: function(){
+        var self = this;
+        // var newPage = self.paginate(self.tableData);
+console.log("table data after pagination");
+console.log(self.tableData);
+        // self.table.loadData(newPage);
+        self.table.loadData(self.paginate(self.input));
+        console.log("load table data");
+
+      },
+      paginate: function(data){
+        var self = this;
+        console.log(data);
+        self.startRow = self.rowsPerPage * (self.currentPage - 1) + 1;
+        self.endRow = Math.min(self.tableData.length - 1, (self.startRow + self.rowsPerPage-1));
+
+        var pageData = data.filter(function(el, i, array){
+          console.log(el);
+          console.log(i);
+          // if (self.firstRowIsHeader){
+            if (i === 0 || (i >= self.startRow && i <= self.endRow)){
+              return el;
+            }  
+          // }
+          
+
+
+        })
+        console.log(pageData);
+
+        return pageData;
+
       },
       convertInput: function(){
         var self = this;
@@ -213,7 +266,13 @@ Element providing solution to no problem in particular.
             self.tableData = self.input; 
         }
 
+        
+
         // TODO: Handle other scenarios
+      },
+      tableDataChanged: function(){
+        var self = this;
+        self.output = self.tableToJSON(self.tableData);
       },
       dataChanged: function(){
         var self = this;
@@ -221,7 +280,7 @@ Element providing solution to no problem in particular.
         if(self.table){
           // don't auto update output unless it is read-only -- it should be intentional
           if (self.readOnly || !self.requireSelection){
-            self.output = self.outputType =='json' ? self.tableToJSON(self.table.getData()) : self.table.getData();
+            // self.output = self.outputType =='json' ? self.tableToJSON(self.table.getData()) : self.table.getData();
           }
         }
       },
@@ -312,6 +371,13 @@ Element providing solution to no problem in particular.
         }
     
       }
+      // TODO:
+      // - clean up what happens when input/tabledata/tabledatapaginated changes
+      // - map output at appropriate times
+      // - what happens when data in the table is edited
+      // - unpaginated version
+      // - add arrows to move thru pages
+      // 
 
     });
 
