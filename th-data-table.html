@@ -76,7 +76,7 @@ Element providing solution to no problem in particular.
 
     </style>
     <template if="{{output}}"><div class="row-count">{{output.length}} rows</div></template>
-    <template if="{{pagination}}"><div >Page <input style="border: 2px solid #eee; padding: 3px; width: 10px;" is="core-input" committedValue="{{currentPage}}" placeholder="{{currentPage}}" type="text"> of {{numPages}} (showing rows {{startRow}} to {{endRow}})</div></template>
+    <template if="{{pagination}}"><div >Page <input style="border: 2px solid #eee; padding: 3px; width: 16px;" is="core-input" committedValue="{{currentPage}}" placeholder="{{currentPage}}" type="text"> of {{numPages}} (showing rows {{startRow}} to {{endRow}})</div></template>
     <div id="table"></div>
     <template if="{{!readOnly}}">
     <div>
