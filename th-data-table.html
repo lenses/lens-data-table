@@ -77,6 +77,7 @@ Element providing solution to no problem in particular.
 
     </style>
     <template if="{{output}}"><div class="row-count">{{output.length}} rows</div></template>
+    <div on-click="{{copyData}}">COPY DATA</div>
     <template if="{{pagination}}">
       <div>
         <core-icon data-page="{{currentPage | prevPage }}" icon="hardware:keyboard-arrow-left"  on-click="{{movePage}}"></core-icon>
@@ -103,6 +104,7 @@ Element providing solution to no problem in particular.
 
   </template>
   <script src="../handsontable/dist/handsontable.full.js"></script>
+  <script src="../zeroclipboard/dist/zeroclipboard.js"></script>
   <script>
 
     Polymer({
@@ -198,6 +200,7 @@ Element providing solution to no problem in particular.
             colHeaders: false,
             copyPaste: self.minimal ? false : true,
             contextMenu: true,
+
             columnSorting: false, // this is tricky when the first row sometimes represents column headers
             comments: false, // adds comments to context menu, but they don't currently work
             afterChange: function(changes, source) {
@@ -232,7 +235,7 @@ Element providing solution to no problem in particular.
       },
       inputChanged: function(){
         var self = this;
-        console.log('input changed!');
+        // console.log('input changed!');
         if(self.input && self.input.length>0){
           self.maxRows = self.input.length;
           self.convertInput();
@@ -315,7 +318,7 @@ Element providing solution to no problem in particular.
       },
       tableDataChanged: function(){
         var self = this;
-        console.log('table data changed');
+        // console.log('table data changed');
         self.output = self.tableToJSON(self.tableData);
       },
       selectData: function(rowStart, colStart, rowEnd, colEnd){
@@ -409,6 +412,29 @@ Element providing solution to no problem in particular.
       },
       nextPage: function(value){
         return parseInt(value)+1;
+      },
+      copyData: function(e, data, selection){
+        var self = this;
+        console.log(window.clipboardData);
+        // self.tableData.execCommand("Copy")
+        // window.clipboardData.setData("text", self.tableData);
+                this.zeroClipboardInstance = new ZeroClipboard('adasd');
+                var swfPath = ZeroClipboard.config("swfPath");
+console.log( this.zeroClipboardInstance);
+console.log(swfPath);
+
+ZeroClipboard.setData({
+  "text/html": self.tableData
+});
+        // this.zeroClipboardInstance.off();
+        // this.zeroClipboardInstance.on("copy", function (event) {
+        //   var clipboard = event.clipboardData;
+        //   clipboard.setData("text/plain", plugin.copy());
+        //   plugin.instance.getSettings().outsideClickDeselects = plugin.outsideClickDeselectsCache;
+        // });
+
+
+
       }
     });
 
