@@ -174,14 +174,20 @@ Element providing solution to no problem in particular.
       minRows: 5,
       attached: function() {
         var self = this;
-        var container = self.$.table;
-
+        
         // Adjust defaults depending on if in minimal mode or not
         self.setDefaults();
 
         // Convert input to correct data structure, if need be
         self.convertInput();
         
+        // Draw the table
+        self.drawTable();
+        
+      },
+      drawTable: function(){
+        var self = this;
+        var container = self.$.table;
         // Create empty table
         self.table = new Handsontable(container,
           {
@@ -232,16 +238,19 @@ Element providing solution to no problem in particular.
       },
       inputChanged: function(){
         var self = this;
-        console.log('input changed!');
         if(self.input && self.input.length>0){
           self.maxRows = self.input.length;
           self.convertInput();
-          if (self.pagination){
-            self.numPages = Math.ceil(self.input.length / self.rowsPerPage);  
-            self.tableDataPaginated = self.paginate(self.tableData);
-            self.table.loadData(self.tableDataPaginated);
+          if(self.table){
+            if (self.pagination){
+              self.numPages = Math.ceil(self.input.length / self.rowsPerPage);  
+              self.tableDataPaginated = self.paginate(self.tableData);
+              self.table.loadData(self.tableDataPaginated);
+            } else {
+              self.table.loadData(self.tableData);
+            }
           } else {
-            self.table.loadData(self.tableData);
+            self.drawTable();
           }
           
         }
@@ -315,7 +324,6 @@ Element providing solution to no problem in particular.
       },
       tableDataChanged: function(){
         var self = this;
-        console.log('table data changed');
         self.output = self.tableToJSON(self.tableData);
       },
       selectData: function(rowStart, colStart, rowEnd, colEnd){
