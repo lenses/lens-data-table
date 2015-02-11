@@ -210,11 +210,26 @@ Element providing solution to no problem in particular.
               
               if(source =='paste'){
                 self.input = this.getInstance().getData();
-              } 
+              } else {
+                if (changes){
+                  var row = changes[0][0];
+                  var col = changes[0][1];
+                  var newValue = changes[0][3];
+                  self.updateTableData(self.currentPage, row, col, newValue);
+                }
+              
+              }
               self.tableDataChanged();
+              
             },
             afterSelectionEnd: function(rowStart, colStart, rowEnd, colEnd){
               self.selectData(rowStart, colStart, rowEnd, colEnd);
+            },
+            afterCreateRow: function(index, amount){
+              // self.addRowToTableData(index, amount)
+              var numCols = self.tableData[0].length;
+              self.tableData.splice(index,0,[null, null,null,null,null]);
+              console.log(new Array(numCols));
             }
           });
 
@@ -236,6 +251,23 @@ Element providing solution to no problem in particular.
           self.maxRows = self.input.length;
         }
       },
+      pageDataChanged: function(){
+        // var self = this;
+        // console.log('pageData');
+        // console.log(self.pageData);
+        // console.log(self.tableData);
+        // var firstRowAdj = self.firstRowIsHeader ? 1 : 0;
+        // for (var i=0; i<self.pageData.length; i++){
+        //   var index = (self.rowsPerPage - firstRowAdj) * (self.currentPage-1) + i;
+        //   console.log("```")
+        //   console.log(self.currentPage);
+        //   console.log('index');
+        //   console.log(index);
+
+        //   self.tableData.splice(index, 1, self.pageData[i]);
+        // }
+        // self.tableData.splice(0, self.pageData.length, self.pageData);  
+      },
       inputChanged: function(){
         var self = this;
         if(self.input && self.input.length>0){
@@ -244,8 +276,8 @@ Element providing solution to no problem in particular.
           if(self.table){
             if (self.pagination){
               self.numPages = Math.ceil(self.input.length / self.rowsPerPage);  
-              self.tableDataPaginated = self.paginate(self.tableData);
-              self.table.loadData(self.tableDataPaginated);
+              self.pageData = self.paginate(self.tableData);
+              self.table.loadData(self.pageData);
             } else {
               self.table.loadData(self.tableData);
             }
@@ -254,6 +286,13 @@ Element providing solution to no problem in particular.
           }
           
         }
+      },
+      updateTableData: function(page, row, column, newValue){
+        var self = this;
+        var firstRowAdj = self.firstRowIsHeader ? 1 : 0;
+        var actualRow = (self.rowsPerPage - firstRowAdj) * (page-1) + row;
+        console.log(actualRow);
+        self.tableData[actualRow][column]= newValue;
       },
       currentPageChanged: function(){
         var self = this;
@@ -324,6 +363,9 @@ Element providing solution to no problem in particular.
       },
       tableDataChanged: function(){
         var self = this;
+        console.log("table data changed")
+        // console.log(self.tableData);
+        // console.log(self.table.getData());
         self.output = self.tableToJSON(self.tableData);
       },
       selectData: function(rowStart, colStart, rowEnd, colEnd){
