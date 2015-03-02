@@ -210,8 +210,8 @@ Element providing solution to no problem in particular.
               
               if(source =='paste'){ // i.e. there may not have been any input before
                 self.input = this.getInstance().getData();
-              } else {
-                self.tableData = this.getInstance().getData();
+              } else if (source=='edit'){
+                self.tableData = self.numPages == 1 ? this.getInstance().getData() : self.tableData;;
               }
               self.tableDataChanged();
             },
