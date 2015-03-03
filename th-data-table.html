@@ -183,6 +183,7 @@ Element providing solution to no problem in particular.
         
         // Draw the table
         self.drawTable();
+
         
       },
       drawTable: function(){
@@ -209,9 +210,14 @@ Element providing solution to no problem in particular.
             afterChange: function(changes, source) {
               
               if(source =='paste'){ // i.e. there may not have been any input before
-                self.input = this.getInstance().getData();
+                if(self.input.length>1){                  
+                  self.pasteMoreData(changes);
+                } else {
+                  self.input = this.getInstance().getData();
+                }
               } else if (source=='edit'){
                 self.tableData = self.numPages == 1 ? this.getInstance().getData() : self.tableData;;
+                self.fire('th-cell-edit', changes)
               }
               self.tableDataChanged();
             },
@@ -238,8 +244,18 @@ Element providing solution to no problem in particular.
           self.maxRows = self.input.length;
         }
       },
+      pasteMoreData: function(changes){
+        var self = this;
+
+
+          for (var i=0; i<changes.length; i++){
+            self.input[changes[i][0]][changes[i][1]] = changes[i][3];
+          }
+          self.inputChanged();
+      },
       inputChanged: function(){
         var self = this;
+
         if(self.input && self.input.length>0){
           self.maxRows = self.input.length;
           self.convertInput();
