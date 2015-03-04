@@ -217,6 +217,17 @@ Element providing solution to no problem in particular.
                 }
               } else if (source=='edit'){
                 self.tableData = self.numPages == 1 ? this.getInstance().getData() : self.tableData;;
+                if (self.pagination && self.numPages > 1){
+                  var firstRowAdj = self.firstRowIsHeader ? 1 : 0;
+                  var row = changes[0][0];
+                  var actualRow = (self.rowsPerPage - firstRowAdj) * (self.currentPage-1) + row + firstRowAdj;
+                  if (firstRowAdj && row===0){
+                    actualRow = 0;
+                  }
+                  changes[0][0] = actualRow;
+
+                }
+                
                 self.fire('th-cell-edit', changes)
               }
               self.tableDataChanged();
@@ -435,7 +446,12 @@ Element providing solution to no problem in particular.
       },
       nextPage: function(value){
         return parseInt(value)+1;
+      },
+      readOnlyChanged: function(){
+        var self = this;
+        self.table.updateSettings({readOnly: self.readOnly})
       }
+
     });
 
   </script>
