@@ -217,18 +217,8 @@ Element providing solution to no problem in particular.
                 }
               } else if (source=='edit'){
                 self.tableData = self.numPages == 1 ? this.getInstance().getData() : self.tableData;;
-                if (self.pagination && self.numPages > 1){
-                  var firstRowAdj = self.firstRowIsHeader ? 1 : 0;
-                  var row = changes[0][0];
-                  var actualRow = (self.rowsPerPage - firstRowAdj) * (self.currentPage-1) + row + firstRowAdj;
-                  if (firstRowAdj && row===0){
-                    actualRow = 0;
-                  }
-                  changes[0][0] = actualRow;
-
-                }
+                self.recordChanges(changes);
                 
-                self.fire('th-cell-edit', changes)
               }
               self.tableDataChanged();
             },
@@ -295,7 +285,7 @@ Element providing solution to no problem in particular.
         self.endRow = Math.min(self.tableData.length - 1, (self.startRow + self.rowsPerPage-1));
 
         var pageData = data.filter(function(el, i, array){
-            if (i === 0 || (i >= self.startRow && i <= self.endRow)){
+            if ((i === 0 && self.firstRowIsHeader) || (i >= self.startRow && i <= self.endRow)){
               return el;
             }  
         })
@@ -450,6 +440,29 @@ Element providing solution to no problem in particular.
       readOnlyChanged: function(){
         var self = this;
         self.table.updateSettings({readOnly: self.readOnly})
+      },
+      recordChanges: function(changes){
+        var self = this;
+        
+        // Determine correct row, accounting for pagination
+        if (self.pagination && self.numPages > 1){
+
+          var firstRowAdj = self.firstRowIsHeader ? 1 : 0,
+              row = changes[0][0],
+              actualRow;
+          if (firstRowAdj && row===0){
+            actualRow = 0;
+          } else {
+            actualRow = (self.rowsPerPage - firstRowAdj) * (self.currentPage-1) + row + firstRowAdj;
+            if (firstRowAdj && self.currentPage === 1 ){
+              actualRow -= 1;
+            }
+          }
+          changes[0][0] = actualRow;
+        }
+
+        // Fire event with changes made
+        self.fire('th-cell-edit', changes)
       }
 
     });
