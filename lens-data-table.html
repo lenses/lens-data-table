@@ -219,7 +219,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         self.convertInput();
         
         // Draw the table
-        self.drawTable();
+        self.inputChanged();
 
         // Adjust defaults depending on if in minimal mode or not
         self.setDefaults();
@@ -232,13 +232,12 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         self.table = new Handsontable(container,
           {
             data: self.pagination ? self.paginate(self.tableData) : self.tableData,
-            // data: Handsontable.helper.createSpreadsheetData(1000, 10),
             // minSpareRows: 1,
             // minSpareRowsCols: 1,
             minRows: self.minRows,
             minCols: self.minCols,
 
-            // these are causing errors
+            // these are causing errors when handsontable tries to parse shadowdom
             fillHandle: false,
             manualColumnResize: false,
             manualRowResize: false,
@@ -335,7 +334,8 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
             if (i === 0 || (i >= self.startRow && i <= self.endRow)){
               return el;
             }  
-        })
+        });
+
         return pageData;
 
       },
