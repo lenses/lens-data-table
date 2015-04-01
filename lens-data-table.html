@@ -17,7 +17,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 @homepage http://lenses.github.io/lens-data-table
 -->
 
-<polymer-element name="lens-data-table" attributes="input output readOnly outputType firstRowIsHeader requireSelection minimal minCols minRows pagination rowsPerPage">
+<polymer-element name="lens-data-table" attributes="input output readOnly outputType firstRowIsHeader minimal minCols minRows pagination rowsPerPage">
 
   <template>
     <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
@@ -91,17 +91,13 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       </template>
       <div id="table"></div>
       <template if="{{!readOnly}}">
-      <div>
-        <template if="{{!minimal}}">
-          <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
-          <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
-          First row represents column titles
-        </template>
-      </div> 
-      
-          <template if="{{requireSelection}}">
-            <div id="select" on-click="{{selectOutput}}">Use Selection</div>
+        <div>
+          <template if="{{!minimal}}">
+            <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
+            <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
+            First row represents column titles
           </template>
+        </div>
       </template>
 
     </template>
@@ -162,7 +158,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
        * @default 1
        */
       numPages: 1, 
-      requireSelection: false, // TODO: retire this attribute
       /**
        * Minimal table without edit (for th-connector)
        * 
@@ -223,9 +218,15 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         // Convert input to correct data structure, if need be
         self.convertInput();
 
-        self.currentSelectionChanged();
+        // self.currentSelectionChanged();
+
         // Draw the table
         self.inputChanged();
+
+        var isFullTable = self.firstRowIsHeader ? 1 : 0;
+        if (self.currentSelection.length <= 1+isFullTable && self.currentSelection[0].length <= 1) {
+          self.currentSelection = self.tableData;
+        }
 
         // Adjust defaults depending on if in minimal mode or not
         self.setDefaults();
@@ -234,6 +235,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       drawTable: function(){
         var self = this;
         var container = self.$.table;
+
         // Create empty table
         self.table = new Handsontable(container,
           {
@@ -279,11 +281,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         var rows = self.shadowRoot.querySelectorAll('tr');
         if (self.firstRowIsHeader && rows.length>0){ 
           rows[0].classList.add("title-row");
-          // var firstRow = rows[0];
-          // console.log('first row --> THEAD');
-          // firstRow.outerHTML = firstRow.outerHTML.replace(/tr/g,"THEAD");
-          // firstRow.classList.add("title-row");
-
         }
       },
       setDefaults: function(){
@@ -292,7 +289,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           self.minRows = 0;
           self.minCols = 0;
           self.readOnly = true;
-          self.requireSelection = false;
           self.maxRows = Math.min(50, self.input.length) 
         } else {
           self.maxRows = self.input.length;
@@ -395,6 +391,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       },
       tableDataChanged: function(){
         var self = this;
+
         // if JSON, output JSON otherwise output Table
         if (self.outputType === 'json') {
           self.output = self.tableToJSON(self.currentSelection);
@@ -404,13 +401,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       },
       currentSelectionChanged: function() {
         var self = this;
-
-        var isFullTable = self.firstRowIsHeader ? 1 : 0;
-
-        if (self.currentSelection.length <= 1+isFullTable && self.currentSelection[0].length <= 1) {
-          self.currentSelection = self.tableData;
-          console.log('less than 1');
-        }
         self.tableDataChanged();
       },
       selectData: function(rowStart, colStart, rowEnd, colEnd){
@@ -419,36 +409,23 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         // Selects data in selected area
         var tempSelection = self.table.getData(rowStart, colStart, rowEnd, colEnd);
 
-        // find headers
         if (self.firstRowIsHeader) {
+          // find header
           var headers = self.table.getData(0, colStart, 0, colEnd);
-          console.log(headers[0])
-          // console.log(headers);
+          // append header to this selection
           tempSelection.splice(0, 0, headers[0]);
         }
-        self.currentSelection = tempSelection;
 
-        // append header to this selection
-        console.log(self.currentSelection);
+        // if selection is too small, then select the whole table
+        var isFullTable = self.firstRowIsHeader ? 1 : 0;
+        if (tempSelection.length <= 1+isFullTable && tempSelection[0].length <= 1) {
+          tempSelection = self.tableData;
+        }
+
+        self.currentSelection = tempSelection;
 
         // Selects DOM <td> elements in selected area
         self.selectedCells = self.shadowRoot.querySelectorAll('td.area');
-      },
-      selectOutput: function(){
-        var self = this;
-        
-        // Clear highlighted section and re-highlight with current selection
-        self.clearSelection();
-        for(var i=0; i<self.selectedCells.length; i++){
-          self.selectedCells[i].classList.add('current-selection');
-        }
-
-        // Set output
-        if(self.outputType == 'json'){
-          self.output = self.tableToJSON(self.currentSelection);
-        } else {
-          self.output = self.currentSelection;
-        }
       },
       clearSelection: function(){
         var self = this;
@@ -509,7 +486,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         var self = this;
         var firstRow = self.shadowRoot.querySelectorAll('tr')[0];
         if (self.firstRowIsHeader){
-          console.log('first row');
           firstRow.outerHTML = firstRow.outerHTML.replace(/tr/g,"THEAD");
           firstRow.classList.add("title-row");
         } else {
