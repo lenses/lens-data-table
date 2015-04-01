@@ -223,11 +223,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         // Draw the table
         self.inputChanged();
 
-        var isFullTable = self.firstRowIsHeader ? 1 : 0;
-        if (self.currentSelection.length <= 1+isFullTable && self.currentSelection[0].length <= 1) {
-          self.currentSelection = self.tableData;
-        }
-
         // Adjust defaults depending on if in minimal mode or not
         self.setDefaults();
 
@@ -270,7 +265,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
                 self.tableData = self.numPages == 1 ? this.getInstance().getData() : self.tableData;;
                 self.fire('lens-cell-edit', changes)
               }
-              self.tableDataChanged();
+              // self._calculateOutput();
             },
             afterSelectionEnd: function(rowStart, colStart, rowEnd, colEnd){
               self.selectData(rowStart, colStart, rowEnd, colEnd);
@@ -320,8 +315,29 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           } else {
             self.drawTable();
           }
-          
+
+          self._calculateOutput();
         }
+      },
+      _calculateOutput: function() {
+        var self = this;
+        var isFullTable = self.firstRowIsHeader ? 1 : 0;
+
+        // if one or fewer cells are selected, currentSelection = all data.
+        if (self.currentSelection.length <= 1+isFullTable && self.currentSelection[0].length <= 1) {
+          self.currentSelection = self.tableData;
+        }
+
+        // if JSON, output JSON otherwise output Table
+        if (self.outputType === 'json') {
+          self.output = self.tableToJSON(self.currentSelection);
+        } else {
+          self.output = self.currentSelection;
+        }
+
+        console.log('calculating output');
+        self.fire('lens-output-ready', self.output);
+
       },
       currentPageChanged: function(){
         var self = this;
@@ -389,20 +405,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 
         // TODO: Handle other scenarios
       },
-      tableDataChanged: function(){
-        var self = this;
-
-        // if JSON, output JSON otherwise output Table
-        if (self.outputType === 'json') {
-          self.output = self.tableToJSON(self.currentSelection);
-        } else {
-          self.output = self.currentSelection;
-        }
-      },
-      currentSelectionChanged: function() {
-        var self = this;
-        self.tableDataChanged();
-      },
       selectData: function(rowStart, colStart, rowEnd, colEnd){
         var self = this;
 
@@ -426,6 +428,8 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 
         // Selects DOM <td> elements in selected area
         self.selectedCells = self.shadowRoot.querySelectorAll('td.area');
+
+        self._calculateOutput();
       },
       clearSelection: function(){
         var self = this;
@@ -436,41 +440,40 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       },
       tableToJSON: function(tableData){
         var self = this;
-        
-          var json = [];
-          if(self.firstRowIsHeader){
+        var json = [];
 
-            // if it is not full table, first row of tableData is not header
-            // var isFullTable = tableData.length === self.tableData.length ? 1 : 0
-
-            for(var i=1; i<tableData.length; i++){
-              var row = {};
-              for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
-                if(tableData[0][index]){ // this condition leaves out blank columns
-                  if(tableData[i][index]){
-                    row[tableData[0][index]] = tableData[i][index]; 
-                  }
+        if(self.firstRowIsHeader) {
+          for(var i=1; i<tableData.length; i++){
+            var row = {};
+            for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
+              if(tableData[0][index]){ // this condition leaves out blank columns
+                if(tableData[i][index]){
+                  row[tableData[0][index]] = tableData[i][index]; 
                 }
-              }
-              if (Object.keys(row).length > 0){ // this condition leaves out blank rows
-                json.push(row);
               }
             }
-          } else {
-            for(var i=0; i<tableData.length; i++){
-              var row = {};
-              for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
-                if(tableData[0][index]){ // this condition leaves out blank columns
-                  row[index] = tableData[i][index]; 
-                }
-              }
-              var columns = Object.keys(row);
-              if (columns.length > 0 || (columns.indexOf('0') > -1 && row['0'])){ // this condition leaves out blank rows 
-                  json.push(row);  
-              }
+            if (Object.keys(row).length > 0){ // this condition leaves out blank rows
+              json.push(row);
             }
           }
-          return json;
+        }
+
+        else {
+          for(var i=0; i<tableData.length; i++){
+            var row = {};
+            for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
+              if(tableData[0][index]){ // this condition leaves out blank columns
+                row[index] = tableData[i][index]; 
+              }
+            }
+            var columns = Object.keys(row);
+            if (columns.length > 0 || (columns.indexOf('0') > -1 && row['0'])){ // this condition leaves out blank rows 
+                json.push(row);
+            }
+          }
+        }
+
+        return json;
 
       },
       toggleFirstRow: function(){
@@ -480,7 +483,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       firstRowIsHeaderChanged: function(){
         var self = this;
         self.formatFirstRow();
-        self.tableDataChanged();
+        self._calculateOutput();
       },
       formatFirstRow: function(){
         var self = this;
@@ -497,6 +500,10 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       },
       nextPage: function(value){
         return parseInt(value)+1;
+      },
+      outputTypeChanged: function() {
+        var self = this;
+        self._calculateOutput();
       }
     });
 
