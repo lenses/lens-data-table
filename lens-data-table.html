@@ -212,12 +212,18 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
        * @default 5
        */
       minRows: 5,
+
+      // used to output only the selection when outputType is 'table'
+      currentSelection: [ [] ],
+      selectedCells: [],
+
       attached: function() {
         var self = this;
 
         // Convert input to correct data structure, if need be
         self.convertInput();
-        
+
+        self.currentSelectionChanged();
         // Draw the table
         self.inputChanged();
 
@@ -389,14 +395,42 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       },
       tableDataChanged: function(){
         var self = this;
-        self.output = self.tableToJSON(self.tableData);
+        // if JSON, output JSON otherwise output Table
+        if (self.outputType === 'json') {
+          self.output = self.tableToJSON(self.currentSelection);
+        } else {
+          self.output = self.currentSelection;
+        }
+      },
+      currentSelectionChanged: function() {
+        var self = this;
+
+        var isFullTable = self.firstRowIsHeader ? 1 : 0;
+
+        if (self.currentSelection.length <= 1+isFullTable && self.currentSelection[0].length <= 1) {
+          self.currentSelection = self.tableData;
+          console.log('less than 1');
+        }
+        self.tableDataChanged();
       },
       selectData: function(rowStart, colStart, rowEnd, colEnd){
         var self = this;
-        
+
         // Selects data in selected area
-        self.currentSelection = self.table.getData(rowStart, colStart, rowEnd, colEnd);
-        
+        var tempSelection = self.table.getData(rowStart, colStart, rowEnd, colEnd);
+
+        // find headers
+        if (self.firstRowIsHeader) {
+          var headers = self.table.getData(0, colStart, 0, colEnd);
+          console.log(headers[0])
+          // console.log(headers);
+          tempSelection.splice(0, 0, headers[0]);
+        }
+        self.currentSelection = tempSelection;
+
+        // append header to this selection
+        console.log(self.currentSelection);
+
         // Selects DOM <td> elements in selected area
         self.selectedCells = self.shadowRoot.querySelectorAll('td.area');
       },
@@ -428,7 +462,10 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         
           var json = [];
           if(self.firstRowIsHeader){
-        
+
+            // if it is not full table, first row of tableData is not header
+            // var isFullTable = tableData.length === self.tableData.length ? 1 : 0
+
             for(var i=1; i<tableData.length; i++){
               var row = {};
               for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
