@@ -198,7 +198,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
        * @type Number
        * @default 5
        */
-      minCols: 5,
+      minCols: 2,
       /**
        * The minimum number of rows the data table should show
        *
@@ -206,19 +206,14 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
        * @type Number
        * @default 5
        */
-      minRows: 5,
+      minRows: 2,
 
-      // used to output only the selection when outputType is 'table'
-      currentSelection: [ [] ],
-      selectedCells: [],
 
       attached: function() {
         var self = this;
 
         // Convert input to correct data structure, if need be
         self.convertInput();
-
-        // self.currentSelectionChanged();
 
         // Draw the table
         self.inputChanged();
@@ -300,7 +295,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       },
       inputChanged: function(){
         var self = this;
-
+        self._resetSelection();
         if(self.input && self.input.length>0){
           self.maxRows = self.input.length;
           self.convertInput();
@@ -504,6 +499,12 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       outputTypeChanged: function() {
         var self = this;
         self._calculateOutput();
+      },
+      _resetSelection: function() {
+        var self = this;
+        // used to output only the selection when outputType is 'table'
+        self.selectedCells = [];
+        self.currentSelection = [ [] ];
       }
     });
 
