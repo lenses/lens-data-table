@@ -4,16 +4,16 @@
 <link rel="import" href="../core-icons/hardware-icons.html">
 
 <!--
-Element providing solution to no problem in particular.
+A smart data table that allows input, selection, edit, delete and other functions
 
 ##### Example
 
     <lens-data-table></lens-data-table>
 
 @element lens-data-table
-@blurb Element providing solution to no problem in particular.
+@blurb A smart data table that allows input, selection, edit, delete and other functions
 @status alpha
-@homepage http://polymerlabs.github.io/lens-data-table
+@homepage http://lenses.github.io/lens-data-table
 -->
 
 <polymer-element name="lens-data-table" attributes="input output readOnly outputType firstRowIsHeader requireSelection minimal minCols minRows pagination rowsPerPage">
@@ -76,32 +76,36 @@ Element providing solution to no problem in particular.
       }
 
     </style>
-    <template if="{{output}}"><div class="row-count">{{output.length}} rows</div></template>
-    <template if="{{pagination}}">
-      <div>
-        <core-icon data-page="{{currentPage | prevPage }}" icon="hardware:keyboard-arrow-left"  on-click="{{movePage}}"></core-icon>
-        Page <input id="pageNum" style="border: 2px solid #eee; padding: 3px; width: 16px;" is="core-input"  committedValue="{{currentPage}}" placeholder="{{currentPage}}" type="text"> of {{numPages}} 
-        <core-icon data-page="{{currentPage | nextPage}}" icon="hardware:keyboard-arrow-right"  on-click="{{movePage}}"></core-icon>
-        <template if="{{startRow && endRow}}">(showing rows {{startRow}} to {{endRow}})</template>
 
-      </div>
-    </template>
-    <div id="table"></div>
-    <template if="{{!readOnly}}">
-    <div>
-      <template if="{{!minimal}}">
-        <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
-        <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
-        First row represents column titles
+    <div class="lens-container lens-data">
+      <template if="{{output}}"><div class="row-count">{{output.length}} rows</div></template>
+      <template if="{{pagination}}">
+        <div>
+          <core-icon data-page="{{currentPage | prevPage }}" icon="hardware:keyboard-arrow-left"  on-click="{{movePage}}"></core-icon>
+          Page <input id="pageNum" style="border: 2px solid #eee; padding: 3px; width: 16px;" is="core-input"  committedValue="{{currentPage}}" placeholder="{{currentPage}}" type="text"> of {{numPages}} 
+          <core-icon data-page="{{currentPage | nextPage}}" icon="hardware:keyboard-arrow-right"  on-click="{{movePage}}"></core-icon>
+          <template if="{{startRow && endRow}}">(showing rows {{startRow}} to {{endRow}})</template>
+
+        </div>
       </template>
-    </div> 
-    
-        <template if="{{requireSelection}}">
-          <div id="select" on-click="{{selectOutput}}">Use Selection</div>
+      <div id="table"></div>
+      <template if="{{!readOnly}}">
+      <div>
+        <template if="{{!minimal}}">
+          <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
+          <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
+          First row represents column titles
         </template>
-    </template>
+      </div> 
+      
+          <template if="{{requireSelection}}">
+            <div id="select" on-click="{{selectOutput}}">Use Selection</div>
+          </template>
+      </template>
 
-  </template>
+    </template>
+  </div> <!-- end container-->
+
   <script src="../handsontable/dist/handsontable.full.js"></script>
   <script>
 
@@ -122,61 +126,88 @@ Element providing solution to no problem in particular.
       input: [[]],
       /**
        * A switch to turn pagination for the table on or off
-       * @type {Boolean}
+       * 
+       * @property pagination
+       * @type Boolean
+       * @default true
        */
       pagination: true,
       /**
        * Number of rows that show on a page, when pagination is true
-       * @type {Number}
+       * 
+       * @property rowsPerPage
+       * @type Number
+       * @default 20
        */
       rowsPerPage: 20,
       /**
        * The default starting page number for a paginated table
-       * @type {Number}
+       * 
+       * @property currentPage
+       * @type Number
+       * @default 1
        */
       currentPage: 1,
       /**
        * The default total number of pages
-       * @type {Number}
+       *
+       * @property numPages
+       * @type Number
+       * @default 1
        */
       numPages: 1, 
       requireSelection: false, // TODO: retire this attribute
       /**
        * Minimal table without edit (for th-connector)
-       * @type {Boolean}
+       * 
+       * [@type] Boolean
+       * @private
        */
       minimal: false,
       /**
        * If the first row in the dataset represents the column headers, this is true
-       * @type {Boolean}
+       *
+       * @property firstRowIsHeader
+       * @type Boolean
+       * @default true
        */
       firstRowIsHeader: true, 
       /**
-       * Preference for the data structure of output
-       * @type {String}
+       * Preference for the data structure of output.<br/>
+       * Options: <code>'table'</code> or <code>'json'</code>
+       *
+       * @property outputType
+       * @type String
        * @options 'table' or 'json'
+       * @default 'json'
        */
       outputType: "json", // table or json
       /**
        * Makes the table uneditable
-       * @type {Boolean}
+       *
+       * @property readOnly
+       * @type Boolean
+       * @default false
        */
       readOnly: false,
       /**
        * The minimum number of columns the data table should show
-       * @type {Number}
+       * 
+       * @property minCols
+       * @type Number
+       * @default 5
        */
       minCols: 5,
       /**
        * The minimum number of rows the data table should show
-       * @type {Number}
+       *
+       * @property minRows
+       * @type Number
+       * @default 5
        */
       minRows: 5,
       attached: function() {
         var self = this;
-        
-        // Adjust defaults depending on if in minimal mode or not
-        self.setDefaults();
 
         // Convert input to correct data structure, if need be
         self.convertInput();
@@ -184,7 +215,9 @@ Element providing solution to no problem in particular.
         // Draw the table
         self.drawTable();
 
-        
+        // Adjust defaults depending on if in minimal mode or not
+        self.setDefaults();
+
       },
       drawTable: function(){
         var self = this;
@@ -217,7 +250,7 @@ Element providing solution to no problem in particular.
                 }
               } else if (source=='edit'){
                 self.tableData = self.numPages == 1 ? this.getInstance().getData() : self.tableData;;
-                self.fire('th-cell-edit', changes)
+                self.fire('lens-cell-edit', changes)
               }
               self.tableDataChanged();
             },
