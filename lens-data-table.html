@@ -4,7 +4,8 @@
 <link rel="import" href="../core-icons/hardware-icons.html">
 
 <!--
-A smart data table that allows input, selection, edit, delete and other functions
+A smart data table that allows input, selection, edit, delete and other functions.
+Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 
 ##### Example
 
@@ -111,19 +112,24 @@ A smart data table that allows input, selection, edit, delete and other function
 
     Polymer({
 
-      // input: [
-      //     ["Metro", "2013 Q3", "2014 Q3"],
-      //     ["Abilene, TX", 139000, 142000],
-      //     ["Akron, OH", 125300, 126000],
-      //     ["Albany-Schenectady-Troy, NY", 205800, 208800]
-      //   ],
-      // input: [
-      //   {"label": "asdasd", "value": 2134},
-      //   {"label": "asdasdasd", "value": 2333},
-      //   {"label": "asda", "value": 1234},
-      //   {"label": "asdaahdhsd", "value": 2124}
-      // ],
+      /**
+       *  Input data. Will be converted to an array of arrays
+       *  if not already in that format.
+       *
+       *  @property input
+       *  @type Array
+       *  @default [ [ ] ]
+       */
       input: [[]],
+
+      /**
+       *  Output data. Converts Table to JSON.
+       *
+       *  @property output
+       *  @type Object
+       *  @default {}
+       */
+      output: {},
       /**
        * A switch to turn pagination for the table on or off
        * 
@@ -226,22 +232,27 @@ A smart data table that allows input, selection, edit, delete and other function
         self.table = new Handsontable(container,
           {
             data: self.pagination ? self.paginate(self.tableData) : self.tableData,
+            // data: Handsontable.helper.createSpreadsheetData(1000, 10),
             // minSpareRows: 1,
             // minSpareRowsCols: 1,
             minRows: self.minRows,
             minCols: self.minCols,
-            manualColumnResize: true,
+
+            // these are causing errors
+            fillHandle: false,
+            manualColumnResize: false,
+            manualRowResize: false,
+            // colHeaders: true,
+            // rowHeaders:true,
+
             manualColumnMove: false,
-            observeChanges: true,
+            observeChanges: false,
             readOnly: self.readOnly,
-            fillHandle: true,
-            colHeaders: false,
             copyPaste: self.minimal ? false : true,
             contextMenu: true,
             columnSorting: false, // this is tricky when the first row sometimes represents column headers
             comments: false, // adds comments to context menu, but they don't currently work
             afterChange: function(changes, source) {
-              
               if(source =='paste'){ // i.e. there may not have been any input before
                 if(self.input.length>1){                  
                   self.pasteMoreData(changes);
@@ -263,6 +274,11 @@ A smart data table that allows input, selection, edit, delete and other function
         var rows = self.shadowRoot.querySelectorAll('tr');
         if (self.firstRowIsHeader && rows.length>0){ 
           rows[0].classList.add("title-row");
+          // var firstRow = rows[0];
+          // console.log('first row --> THEAD');
+          // firstRow.outerHTML = firstRow.outerHTML.replace(/tr/g,"THEAD");
+          // firstRow.classList.add("title-row");
+
         }
       },
       setDefaults: function(){
@@ -309,7 +325,6 @@ A smart data table that allows input, selection, edit, delete and other function
       currentPageChanged: function(){
         var self = this;
         self.table.loadData(self.paginate(self.tableData));
-
       },
       paginate: function(data){
         var self = this;
@@ -338,11 +353,10 @@ A smart data table that allows input, selection, edit, delete and other function
           
         // Convert to array of arrays if not in that format
         if(self.input && self.input[0] && self.input[0].constructor != Array){
+
           // Case 1: each item is an object
           if (typeof(self.input[0])=='object'){
-
             // If the object keys are just numbers, don't show them, otherwise do  
-
             var keys = Object.keys(self.input[0]);
             self.tableData = keys[0] == ["0"] ? [] : [keys];
             
@@ -357,7 +371,7 @@ A smart data table that allows input, selection, edit, delete and other function
             }
 
           // Case 2: each item is a string (only one column without a col title)
-          } else if(typeof(self.input[0])=='string'){            
+          } else if(typeof(self.input[0])=='string'){
             self.tableData=[];
             for(var i=0;i<self.input.length;i++){
               self.tableData.push([self.input[i]]);
@@ -458,6 +472,8 @@ A smart data table that allows input, selection, edit, delete and other function
         var self = this;
         var firstRow = self.shadowRoot.querySelectorAll('tr')[0];
         if (self.firstRowIsHeader){
+          console.log('first row');
+          firstRow.outerHTML = firstRow.outerHTML.replace(/tr/g,"THEAD");
           firstRow.classList.add("title-row");
         } else {
           firstRow.classList.remove("title-row");
