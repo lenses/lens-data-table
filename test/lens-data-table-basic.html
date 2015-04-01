@@ -34,19 +34,9 @@
         component.input = newInput;
 
         flush(function() {
-          console.log(component.output);
           component.input.should.equal(newInput);
           component.output[0].phrase.should.eql('hello');
           component.output[1].phrase.should.eql('world');
-          done();
-        });
-      });
-
-      test("draws the table", function(done) {
-        component.drawTable();
-
-        flush(function() {
-          // console.log(component.output);
           done();
         });
       });
@@ -65,8 +55,6 @@
         component.input = bigInput;
 
         flush(function() {
-          // console.log(component.output[0]);
-
           component.input.should.equal(bigInput);
           component.output.length.should.equal(component.input.length);
           component.output.length.should.equal(313);
@@ -75,15 +63,14 @@
 
       });
 
-      // test("output can be changed from JSON (default) to Table", function(done) {
-      //   component.outputType = 'table';
-      //   component.selectOutput();
+      test("output can be changed from JSON (default) to Table", function(done) {
+        component.outputType = 'table';
 
-      //   flush(function() {
-      //     console.log(component.output);
-      //     done();
-      //   });
-      // });
+        flush(function() {
+          component.output[0].should.eql(["HT", "WT", "AGE", "POS"]);
+          done();
+        });
+      });
 
     });
   </script>
