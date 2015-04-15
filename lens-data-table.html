@@ -96,6 +96,11 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
             <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
             <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
             First row represents column titles
+
+            <template if="{{!enableSelection}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleEnableSelection}}"></core-icon> </template>
+            <template if="{{enableSelection}}"> <core-icon icon="check-box" on-click="{{toggleEnableSelection}}"></core-icon> </template>
+            Output selection only
+
           </template>
         </div>
       </template>
@@ -208,6 +213,15 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
        */
       minRows: 2,
 
+      /**
+       *  Enable whether table outputs all data, or just user selection.
+       *
+       *  @property enableSelection
+       *  @type Boolean
+       *  @default false
+       */
+      enableSelection: true,
+
 
       attached: function() {
         var self = this;
@@ -222,7 +236,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         self.setDefaults();
 
       },
-      drawTable: function(){
+      drawTable: function(){ 
         var self = this;
         var container = self.$.table;
 
@@ -236,7 +250,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
             minCols: self.minCols,
 
             // these are causing errors when handsontable tries to parse shadowdom
-            fillHandle: false,
+            fillHandle: true,
             manualColumnResize: false,
             manualRowResize: false,
             // colHeaders: true,
@@ -262,8 +276,30 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
               }
               // self._calculateOutput();
             },
-            afterSelectionEnd: function(rowStart, colStart, rowEnd, colEnd){
-              self.selectData(rowStart, colStart, rowEnd, colEnd);
+            afterSelectionEnd: function(rowStart, colStart, rowEnd, colEnd) {
+              if (self.enableSelection) {
+                self.selectData(rowStart, colStart, rowEnd, colEnd);
+              } else {
+                self._resetSelection();
+                self._calculateOutput();
+              }
+            },
+            afterDeselect: function(e) {
+              console.log('enableSelection = ' + self.enableSelection);
+              if (self.enableSelection) {
+                // TO DO: figure out how and when to keep selection highlighted, something like this ?
+                // For now, reset selection on click:
+                for (var i = 0; i < self.selectedCells.length; i++) {
+                  self.selectedCells[i].classList.add('area');
+                }
+              }
+              else {
+                self._resetSelection();
+              }
+
+              self._calculateOutput();
+
+
             }
           });
 
@@ -273,7 +309,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           rows[0].classList.add("title-row");
         }
       },
-      setDefaults: function(){
+      setDefaults: function() {
         var self = this;
         if (self.minimal){
           self.minRows = 0;
@@ -284,16 +320,15 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           self.maxRows = self.input.length;
         }
       },
-      pasteMoreData: function(changes){
+      pasteMoreData: function(changes) {
         var self = this;
-
 
           for (var i=0; i<changes.length; i++){
             self.input[changes[i][0]][changes[i][1]] = changes[i][3];
           }
           self.inputChanged();
       },
-      inputChanged: function(){
+      inputChanged: function() {
         var self = this;
         self._resetSelection();
         if(self.input && self.input.length>0){
@@ -334,7 +369,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         self.fire('lens-output-ready', self.output);
 
       },
-      currentPageChanged: function(){
+      currentPageChanged: function() {
         var self = this;
         self.table.loadData(self.paginate(self.tableData));
       },
@@ -352,7 +387,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         return pageData;
 
       },
-      movePage: function(e, detail, selection){
+      movePage: function(e, detail, selection) {
         var self = this,
             newPage = parseInt(selection.dataset.page);
 
@@ -363,7 +398,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 
         self.formatFirstRow();
       },
-      convertInput: function(){
+      convertInput: function() {
         var self = this;
           
         // Convert to array of arrays if not in that format
@@ -402,8 +437,15 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 
         // TODO: Handle other scenarios
       },
-      selectData: function(rowStart, colStart, rowEnd, colEnd){
+      selectData: function(rowStart, colStart, rowEnd, colEnd) {
         var self = this;
+
+        // if only headers are selected, select the entire columns
+        if (rowStart === 0 && rowEnd === 0 && self.firstRowIsHeader) {
+          // rowEnd = self.input.length - 1;
+          self.selectColumns(colStart, colEnd);
+          return;
+        }
 
         // Selects data in selected area
         var tempSelection = self.table.getData(rowStart, colStart, rowEnd, colEnd);
@@ -428,14 +470,43 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 
         self._calculateOutput();
       },
+
+      selectColumns: function(colStart, colEnd) {
+        var self = this;
+
+        // find headers
+        var headers = self.table.getData(0, colStart, 0, colEnd)[0];
+
+        var tempSelection = [];
+        tempSelection.push(headers);
+
+        // generate new selection with only selected header keys
+        for (var i = 0; i < self.input.length; i++) {
+          var newArr = [];
+          var obj = self.input[i];
+
+          for (var h = 0; h < headers.length; h++) {
+            var headerKey = headers[h];
+            var item = obj[headerKey];
+            newArr.push(item);
+          }
+          tempSelection.push(newArr);
+        }
+
+        self.currentSelection = tempSelection;
+        self._calculateOutput();
+
+      },
+
       clearSelection: function(){
         var self = this;
         var allCells = self.shadowRoot.querySelectorAll('td'); 
         for (var i=0; i<allCells.length; i++){
           allCells[i].classList.remove('current-selection');
+          allCells[i].classList.remove('area');
         }
       },
-      tableToJSON: function(tableData){
+      tableToJSON: function(tableData) {
         var self = this;
         var json = [];
 
@@ -473,7 +544,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         return json;
 
       },
-      toggleFirstRow: function(){
+      toggleFirstRow: function() {
         var self = this;
         self.firstRowIsHeader = self.firstRowIsHeader == true ? false : true;
       },
@@ -482,7 +553,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         self.formatFirstRow();
         self._calculateOutput();
       },
-      formatFirstRow: function(){
+      formatFirstRow: function() {
         var self = this;
         var firstRow = self.shadowRoot.querySelectorAll('tr')[0];
         if (self.firstRowIsHeader){
@@ -491,20 +562,20 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           firstRow.hidden = false;
         } else {
           firstRow.classList.remove("title-row");
-
           if (self.currentPage > 1){
             firstRow.hidden = true;
           }
           else {
+            // show first row if on first page, but dont make bold it with class title-row
             firstRow.hidden = false;
           }
         }
       },
 
-      prevPage: function(value){
+      prevPage: function(value) {
         return parseInt(value)-1;
       },
-      nextPage: function(value){
+      nextPage: function(value) {
         return parseInt(value)+1;
       },
       outputTypeChanged: function() {
@@ -514,9 +585,22 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       _resetSelection: function() {
         var self = this;
         // used to output only the selection when outputType is 'table'
+        self.clearSelection();
         self.selectedCells = [];
         self.currentSelection = [ [] ];
-      }
+      },
+
+      toggleEnableSelection: function() {
+        var self = this;
+        self.enableSelection = self.enableSelection == true ? false : true;
+      },
+
+      enableSelectionChanged: function() {
+        var self = this;
+        self._resetSelection();
+        self._calculateOutput();
+      },
+
     });
 
   </script>
