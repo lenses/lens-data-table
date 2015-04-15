@@ -22,8 +22,13 @@
 
     suite("<lens-data-table>", function() {
 
+      var firstRow;
+
+
       test("component can be created as an object", function(done) {
         should.exist(component);
+
+        firstRow = component.shadowRoot.querySelectorAll('tr')[0];
         done();
       });
 
@@ -42,9 +47,12 @@
       });
 
       test("firstRowIsHeader can be false", function(done) {
+        firstRow.className.should.contain('title-row');
+
         component.firstRowIsHeader = false;
 
         flush(function() {
+          firstRow.className.should.not.contain('title-row');
           component.output[0][0].should.eql('phrase');
           done();
         });
@@ -58,6 +66,8 @@
           component.input.should.equal(bigInput);
           component.output.length.should.equal(component.input.length);
           component.output.length.should.equal(313);
+          firstRow.className.should.contain('title-row');
+
           done();
         });
 
@@ -68,6 +78,123 @@
 
         flush(function() {
           component.output[0].should.eql(["HT", "WT", "AGE", "POS"]);
+          done();
+        });
+      });
+
+      test("firstRowIsHeader can be toggled back to false", function(done) {
+          firstRow.className.should.contain('title-row');
+          component.firstRowIsHeader = false;
+
+          flush(function() {
+            firstRow.className.should.not.contain('title-row');
+
+            console.log(component.output[0]);
+            done();
+          });
+      });
+
+      test("table includes columns even if first two fields are blank", function(done) {
+        bigInput[0] =  {"WT":"200","AGE":"25"};
+        bigInput[1] =  {"AGE":"29"};
+        component.input = bigInput;
+
+        flush(function() {
+          component.output[0].should.have.members(["HT", "WT", "AGE", "POS"]);
+          component.output[1].should.have.members([undefined, "200", "25", undefined]);
+          component.output[2].should.have.members([undefined, undefined, "29", undefined]);
+          component.output[3].should.have.members(["77", "308", "23", "G"]);
+          component.output.length.should.eql(bigInput.length + 1); // +1 because header row is its own item
+          done();
+        });
+      });
+
+      test("can select columns as table", function(done) {
+        // TO DO
+        component.selectColumns(0,2);
+
+        flush(function() {
+          component.output[0].length.should.eql(3);
+          component.output[0].should.have.members(["HT", "WT", "AGE"])
+          component.output[1].length.should.eql(3);
+          // component.output[1].should.have.members([undefined, "200"])
+          console.log(component.output[2]);
+          done();
+        });
+      });
+
+      test("change output type back to json, bring back header, resetSelection", function(done) {
+        component.firstRowIsHeader = true;
+        component._resetSelection();
+        component.outputType = 'json';
+
+        flush(function() {
+          component.output.length.should.eql(313);
+          Object.keys(component.output[0]).should.have.members(["WT", "AGE"]);
+          Object.keys(component.output[1]).should.have.members(["AGE"]);
+          Object.keys(component.output[2]).should.have.members(["HT", "WT", "AGE", "POS"]);
+          done();
+        });
+      });
+
+      test("can select columns as json", function(done) {
+        component.selectColumns(2,3);
+
+        flush(function() {
+          component.output.length.should.eql(313);
+          Object.keys(component.output[0]).should.have.members(["AGE"]);
+          Object.keys(component.output[1]).should.have.members(["AGE"]);
+          Object.keys(component.output[2]).should.have.members(["AGE", "POS"]);
+          done();
+        });
+      });
+
+
+      test("can select data", function(done) {
+        component.selectData(1, 0, 10, 3);
+
+        flush(function() {
+          component.output.length.should.eql(10);
+          Object.keys(component.output[0]).should.have.members(["WT", "AGE"]);
+          Object.keys(component.output[1]).should.have.members(["AGE"]);
+          Object.keys(component.output[2]).should.have.members(["HT", "WT", "AGE", "POS"]);
+          done();
+        });
+      });
+
+      test("can select different data", function(done) {
+        component.selectData(2, 1, 10, 3);
+
+        flush(function() {
+          component.output.length.should.eql(9);
+          Object.keys(component.output[0]).should.have.members(["AGE"]);
+          Object.keys(component.output[1]).should.have.members(["WT", "AGE", "POS"]);
+          done();
+        });
+      });
+
+      test("if header row is part of selection, it should not be included as an object in json output", function(done) {
+        component.selectData(0, 0, 20, 3);
+
+        flush(function() {
+          component.output.length.should.eql(20);
+          Object.keys(component.output[0]).should.have.members(["WT", "AGE"]);
+          Object.keys(component.output[1]).should.have.members(["AGE"]);
+          Object.keys(component.output[2]).should.have.members(["HT", "WT", "AGE", "POS"]);
+          done();
+        });
+      });
+
+      test("setting firstRowIsHeader to false includes first row in output", function(done) {
+        component.firstRowIsHeader = false;
+
+        flush(function() {
+          console.log(component.output[0]);
+          var expectedKeys = ["HT", "WT", "AGE", "POS"];
+          var objKeys = Object.keys(component.output[0]);
+          for (var i in objKeys) {
+            component.output[0][i].should.eql(expectedKeys[i]);
+          }
           done();
         });
       });
