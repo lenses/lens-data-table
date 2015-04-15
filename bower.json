@@ -12,7 +12,8 @@
     "handsontable": "handsontable/handsontable#>=0.13.1",
     "core-component-page": "Polymer/core-component-page#~0.5.5",
     "core-icons": "Polymer/core-icons#~0.5.5",
-    "core-input": "Polymer/core-input#~0.5.5"
+    "core-input": "Polymer/core-input#~0.5.5",
+    "lodash": "lodash/lodash#~3.5.0"
   },
   "devDependencies": {
     "web-component-tester": "Polymer/web-component-tester#^2.2.6"

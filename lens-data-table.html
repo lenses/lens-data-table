@@ -285,10 +285,9 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
               }
             },
             afterDeselect: function(e) {
-              console.log('enableSelection = ' + self.enableSelection);
               if (self.enableSelection) {
-                // TO DO: figure out how and when to keep selection highlighted, something like this ?
-                // For now, reset selection on click:
+
+                // TO DO: figure out how and when to keep selection highlighted. For now there is a toggle button.
                 for (var i = 0; i < self.selectedCells.length; i++) {
                   self.selectedCells[i].classList.add('area');
                 }
@@ -482,19 +481,27 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       selectColumns: function(colStart, colEnd) {
         var self = this;
 
-        // find headers
-        var headers = self.table.getData(0, colStart, 0, colEnd)[0];
+        // find header names/keys. If header is blank for some reason, use the string of the column.
+        var data = self.tableToJSON(self.tableData);
+        var origHeaders = self.table.getDataAtRow(0);
+        var headers = [];
+        var cStart = Math.min(colStart, colEnd);
+        var cEnd = Math.max(colStart, colEnd);
+        for (var h = cStart; h <= cEnd; h++) {
+          var header = origHeaders[h].length > 0 ? origHeaders[h] : String(h);
+          headers.push(header);
+        }
 
         var tempSelection = [];
         tempSelection.push(headers);
 
         // generate new selection with only selected header keys
-        for (var i = 0; i < self.input.length; i++) {
+        for (var i = 0; i < data.length; i++) {
           var newArr = [];
-          var obj = self.input[i];
+          var obj = data[i];
 
-          for (var h = 0; h < headers.length; h++) {
-            var headerKey = headers[h];
+          for (var j = 0; j < headers.length; j++) {
+            var headerKey = headers[j];
             var item = obj[headerKey];
             newArr.push(item);
           }
