@@ -109,6 +109,8 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
   </div> <!-- end container-->
 
   <script src="../handsontable/dist/handsontable.full.js"></script>
+  <script src="../lodash/lodash.js"></script>
+
   <script>
 
     Polymer({
@@ -404,10 +406,12 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 
           // Case 1: each item is an object
           if (typeof(self.input[0])=='object'){
+
+            var keys = self._parseKeysFromSample(self.input);
+
             // If the object keys are just numbers, don't show them, otherwise do  
-            var keys = Object.keys(self.input[0]);
             self.tableData = keys[0] == ["0"] ? [] : [keys];
-            
+
             // set maximum number of rows when in minimal mode.
 
             // var maxRows = self.minimal ? Math.min(50, self.input.length) : self.input.length;
@@ -617,6 +621,21 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         self._resetSelection();
         self._calculateOutput();
       },
+
+      // determine keys for overall input by taking a sampling of input
+      _parseKeysFromSample: function(data, sampleSize) {
+        // var keys = Object.keys(self.input[0]);
+
+        if(!sampleSize) {
+          sampleSize = Math.min(100, data.length);
+        }
+
+        var sample = _.sample(data, sampleSize).reduce(function(keysSoFar, obj) {
+          return Object.keys(obj);
+        })
+
+        return sample;
+      }
 
     });
 
