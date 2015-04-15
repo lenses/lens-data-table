@@ -360,6 +360,8 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           self.$.pageNum.value = newPage;
           self.currentPage = newPage;
         }
+
+        self.formatFirstRow();
       },
       convertInput: function(){
         var self = this;
@@ -484,12 +486,21 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         var self = this;
         var firstRow = self.shadowRoot.querySelectorAll('tr')[0];
         if (self.firstRowIsHeader){
-          firstRow.outerHTML = firstRow.outerHTML.replace(/tr/g,"THEAD");
+          // firstRow.outerHTML = firstRow.outerHTML.replace(/tr/g,"THEAD");
           firstRow.classList.add("title-row");
+          firstRow.hidden = false;
         } else {
           firstRow.classList.remove("title-row");
+
+          if (self.currentPage > 1){
+            firstRow.hidden = true;
+          }
+          else {
+            firstRow.hidden = false;
+          }
         }
       },
+
       prevPage: function(value){
         return parseInt(value)-1;
       },
