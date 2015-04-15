@@ -220,7 +220,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
        *  @type Boolean
        *  @default false
        */
-      enableSelection: true,
+      enableSelection: false,
 
 
       attached: function() {
@@ -298,7 +298,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
               }
 
               self._calculateOutput();
-
 
             }
           });
@@ -445,6 +444,11 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           // rowEnd = self.input.length - 1;
           self.selectColumns(colStart, colEnd);
           return;
+        }
+
+        // do not include header row in selection
+        if (rowStart === 0) {
+          rowStart = 1;
         }
 
         // Selects data in selected area
