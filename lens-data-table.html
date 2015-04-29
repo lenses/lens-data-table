@@ -17,7 +17,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 @homepage http://lenses.github.io/lens-data-table
 -->
 
-<polymer-element name="lens-data-table" attributes="input output readOnly outputType firstRowIsHeader minimal minCols minRows pagination rowsPerPage enableSelection selectedOutput">
+<polymer-element name="lens-data-table" attributes="input output readOnly outputType firstRowIsHeader minimal minCols minRows pagination rowsPerPage enableSelection userSelection">
 
   <template>
     <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
@@ -227,10 +227,10 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       /**
        *  Data selected by the user by dragging to select cells (if enableSelection is true)
        *
-       *  @property selectedOutput
+       *  @property userSelection
        *  @type Array
        */
-      selectedOutput: [],
+      userSelection: [],
 
       attached: function() {
         var self = this;
@@ -358,11 +358,11 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 
         // if JSON, output JSON otherwise output Table
         if (self.outputType === 'json') {
-          self.selectedOutput = self.tableToJSON(self.currentSelection);
-          self.output = self.enableSelection ? self.selectedOutput : self.tableToJSON(self.tableData);
+          self.userSelection = self.tableToJSON(self.currentSelection);
+          self.output = self.enableSelection ? self.userSelection : self.tableToJSON(self.tableData);
         } else {
-          self.selectedOutput = self.currentSelection;
-          self.output = self.enableSelection ? self.selectedOutput : self.tableData;
+          self.userSelection = self.currentSelection;
+          self.output = self.enableSelection ? self.userSelection : self.tableData;
         }
 
         // NOTE this is not currently in use, but may be in the future
