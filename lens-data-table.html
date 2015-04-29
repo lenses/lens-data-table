@@ -17,7 +17,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 @homepage http://lenses.github.io/lens-data-table
 -->
 
-<polymer-element name="lens-data-table" attributes="input output readOnly outputType firstRowIsHeader minimal minCols minRows pagination rowsPerPage enableSelection">
+<polymer-element name="lens-data-table" attributes="input output readOnly outputType firstRowIsHeader minimal minCols minRows pagination rowsPerPage enableSelection selectedOutput">
 
   <template>
     <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
@@ -129,10 +129,10 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
        *  Output data. Converts Table to JSON.
        *
        *  @property output
-       *  @type Object
-       *  @default {}
+       *  @type Array
+       *  @default []
        */
-      output: {},
+      output: [],
       /**
        * A switch to turn pagination for the table on or off
        * 
@@ -224,6 +224,13 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
        */
       enableSelection: false,
 
+      /**
+       *  Data selected by the user by dragging to select cells (if enableSelection is true)
+       *
+       *  @property selectedOutput
+       *  @type Array
+       */
+      selectedOutput: [],
 
       attached: function() {
         var self = this;
@@ -288,7 +295,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
             },
             afterDeselect: function(e) {
               if (self.enableSelection) {
-
                 // TO DO: figure out how and when to keep selection highlighted. For now there is a toggle button.
                 for (var i = 0; i < self.selectedCells.length; i++) {
                   self.selectedCells[i].classList.add('area');
@@ -366,10 +372,18 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 
         // if JSON, output JSON otherwise output Table
         if (self.outputType === 'json') {
-          self.output = self.tableToJSON(self.currentSelection);
+          self.selectedOutput = self.tableToJSON(self.currentSelection);
+          self.output = self.selectedOutput;
         } else {
-          self.output = self.currentSelection;
+          self.selectedOutput = self.currentSelection;
+          self.output = self.tableData;
         }
+
+        // if (self.enableSelection) {
+        //   self.output = self.selectedOutput;
+        // } else {
+        //   self.output = self.tableData;
+        // }
 
         // NOTE this is not currently in use, but may be in the future
         self.fire('lens-output-ready', self.output);
