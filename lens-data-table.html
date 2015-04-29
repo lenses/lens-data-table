@@ -286,33 +286,19 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
               // self._calculateOutput();
             },
             afterSelectionEnd: function(rowStart, colStart, rowEnd, colEnd) {
-              if (self.enableSelection) {
-                self.selectData(rowStart, colStart, rowEnd, colEnd);
-              } else {
-                self._resetSelection();
-                self._calculateOutput();
-              }
+              self.selectData(rowStart, colStart, rowEnd, colEnd);
+              self._calculateOutput();
             },
             afterDeselect: function(e) {
-              if (self.enableSelection) {
-                // TO DO: figure out how and when to keep selection highlighted. For now there is a toggle button.
-                for (var i = 0; i < self.selectedCells.length; i++) {
-                  self.selectedCells[i].classList.add('area');
-                }
+              for (var i = 0; i < self.selectedCells.length; i++) {
+                self.selectedCells[i].classList.add('area');
               }
-              else {
-                self._resetSelection();
-              }
-
               self._calculateOutput();
-
-            },
-
-            beforeKeyDown: function(e) {
-              // console.log(e);
-              // console.log('before key down');
             }
-
+            // beforeKeyDown: function(e) {
+            //   // console.log(e);
+            //   // console.log('before key down');
+            // }
           });
 
         // Bold the first row if it represents column titles
@@ -373,17 +359,11 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         // if JSON, output JSON otherwise output Table
         if (self.outputType === 'json') {
           self.selectedOutput = self.tableToJSON(self.currentSelection);
-          self.output = self.selectedOutput;
+          self.output = self.enableSelection ? self.selectedOutput : self.tableToJSON(self.tableData);
         } else {
           self.selectedOutput = self.currentSelection;
-          self.output = self.tableData;
+          self.output = self.enableSelection ? self.selectedOutput : self.tableData;
         }
-
-        // if (self.enableSelection) {
-        //   self.output = self.selectedOutput;
-        // } else {
-        //   self.output = self.tableData;
-        // }
 
         // NOTE this is not currently in use, but may be in the future
         self.fire('lens-output-ready', self.output);
