@@ -300,7 +300,13 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 
               self._calculateOutput();
 
+            },
+
+            beforeKeyDown: function(e) {
+              // console.log(e);
+              // console.log('before key down');
             }
+
           });
 
         // Bold the first row if it represents column titles
