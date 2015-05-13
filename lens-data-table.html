@@ -4,19 +4,20 @@
 <link rel="import" href="../core-icons/hardware-icons.html">
 
 <!--
-Element providing solution to no problem in particular.
+A smart data table that allows input, selection, edit, delete and other functions.
+Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
 
 ##### Example
 
     <lens-data-table></lens-data-table>
 
 @element lens-data-table
-@blurb Element providing solution to no problem in particular.
+@blurb A smart data table that allows input, selection, edit, delete and other functions
 @status alpha
-@homepage http://polymerlabs.github.io/lens-data-table
+@homepage http://lenses.github.io/lens-data-table
 -->
 
-<polymer-element name="lens-data-table" attributes="input output readOnly outputType firstRowIsHeader requireSelection minimal minCols minRows pagination rowsPerPage">
+<polymer-element name="lens-data-table" attributes="input output readOnly outputType firstRowIsHeader minimal minCols minRows pagination rowsPerPage enableSelection userSelection">
 
   <template>
     <link rel="stylesheet" href="../handsontable/dist/handsontable.full.css">
@@ -76,119 +77,178 @@ Element providing solution to no problem in particular.
       }
 
     </style>
-    <template if="{{output}}"><div class="row-count">{{output.length}} rows</div></template>
-    <template if="{{pagination}}">
-      <div>
-        <core-icon data-page="{{currentPage | prevPage }}" icon="hardware:keyboard-arrow-left"  on-click="{{movePage}}"></core-icon>
-        Page <input id="pageNum" style="border: 2px solid #eee; padding: 3px; width: 16px;" is="core-input"  committedValue="{{currentPage}}" placeholder="{{currentPage}}" type="text"> of {{numPages}} 
-        <core-icon data-page="{{currentPage | nextPage}}" icon="hardware:keyboard-arrow-right"  on-click="{{movePage}}"></core-icon>
-        <template if="{{startRow && endRow}}">(showing rows {{startRow}} to {{endRow}})</template>
 
-      </div>
-    </template>
-    <div id="table"></div>
-    <template if="{{!readOnly}}">
-    <div>
-      <template if="{{!minimal}}">
-        <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
-        <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
-        First row represents column titles
+    <div class="lens-container lens-data">
+      <template if="{{output}}"><div class="row-count">{{output.length}} rows</div></template>
+      <template if="{{pagination}}">
+        <div>
+          <core-icon data-page="{{currentPage | prevPage }}" icon="hardware:keyboard-arrow-left"  on-click="{{movePage}}"></core-icon>
+          Page <input id="pageNum" style="border: 2px solid #eee; padding: 3px; width: 16px;" is="core-input"  committedValue="{{currentPage}}" placeholder="{{currentPage}}" type="text"> of {{numPages}} 
+          <core-icon data-page="{{currentPage | nextPage}}" icon="hardware:keyboard-arrow-right"  on-click="{{movePage}}"></core-icon>
+          <template if="{{startRow && endRow}}">(showing rows {{startRow}} to {{endRow}})</template>
+
+        </div>
       </template>
-    </div> 
-    
-        <template if="{{requireSelection}}">
-          <div id="select" on-click="{{selectOutput}}">Use Selection</div>
-        </template>
-    </template>
+      <div id="table"></div>
+      <template if="{{!readOnly}}">
+        <div>
+          <template if="{{!minimal}}">
+            <template if="{{!firstRowIsHeader}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleFirstRow}}"></core-icon> </template>
+            <template if="{{firstRowIsHeader}}"> <core-icon icon="check-box" on-click="{{toggleFirstRow}}"></core-icon> </template>
+            First row represents column titles
 
-  </template>
+            <template if="{{!enableSelection}}"> <core-icon icon="check-box-outline-blank" on-click="{{toggleEnableSelection}}"></core-icon> </template>
+            <template if="{{enableSelection}}"> <core-icon icon="check-box" on-click="{{toggleEnableSelection}}"></core-icon> </template>
+            Output selection only
+
+          </template>
+        </div>
+      </template>
+
+    </template>
+  </div> <!-- end container-->
+
   <script src="../handsontable/dist/handsontable.full.js"></script>
+  <script src="../lodash/lodash.js"></script>
+
   <script>
 
     Polymer({
 
-      // input: [
-      //     ["Metro", "2013 Q3", "2014 Q3"],
-      //     ["Abilene, TX", 139000, 142000],
-      //     ["Akron, OH", 125300, 126000],
-      //     ["Albany-Schenectady-Troy, NY", 205800, 208800]
-      //   ],
-      // input: [
-      //   {"label": "asdasd", "value": 2134},
-      //   {"label": "asdasdasd", "value": 2333},
-      //   {"label": "asda", "value": 1234},
-      //   {"label": "asdaahdhsd", "value": 2124}
-      // ],
+      /**
+       *  Input data. Will be converted to an array of arrays
+       *  if not already in that format.
+       *
+       *  @property input
+       *  @type Array
+       *  @default [ [ ] ]
+       */
       input: [[]],
+
+      /**
+       *  Output data. Converts Table to JSON.
+       *
+       *  @property output
+       *  @type Array
+       *  @default []
+       */
+      output: [],
       /**
        * A switch to turn pagination for the table on or off
-       * @type {Boolean}
+       * 
+       * @property pagination
+       * @type Boolean
+       * @default true
        */
       pagination: true,
       /**
        * Number of rows that show on a page, when pagination is true
-       * @type {Number}
+       * 
+       * @property rowsPerPage
+       * @type Number
+       * @default 20
        */
       rowsPerPage: 20,
       /**
        * The default starting page number for a paginated table
-       * @type {Number}
+       * 
+       * @property currentPage
+       * @type Number
+       * @default 1
        */
       currentPage: 1,
       /**
        * The default total number of pages
-       * @type {Number}
+       *
+       * @property numPages
+       * @type Number
+       * @default 1
        */
       numPages: 1, 
-      requireSelection: false, // TODO: retire this attribute
       /**
        * Minimal table without edit (for th-connector)
-       * @type {Boolean}
+       * 
+       * [@type] Boolean
+       * @private
        */
       minimal: false,
       /**
        * If the first row in the dataset represents the column headers, this is true
-       * @type {Boolean}
+       *
+       * @property firstRowIsHeader
+       * @type Boolean
+       * @default true
        */
       firstRowIsHeader: true, 
       /**
-       * Preference for the data structure of output
-       * @type {String}
+       * Preference for the data structure of output.<br/>
+       * Options: <code>'table'</code> or <code>'json'</code>
+       *
+       * @property outputType
+       * @type String
        * @options 'table' or 'json'
+       * @default 'json'
        */
       outputType: "json", // table or json
       /**
        * Makes the table uneditable
-       * @type {Boolean}
+       *
+       * @property readOnly
+       * @type Boolean
+       * @default false
        */
       readOnly: false,
       /**
        * The minimum number of columns the data table should show
-       * @type {Number}
+       * 
+       * @property minCols
+       * @type Number
+       * @default 5
        */
-      minCols: 5,
+      minCols: 2,
       /**
        * The minimum number of rows the data table should show
-       * @type {Number}
+       *
+       * @property minRows
+       * @type Number
+       * @default 5
        */
-      minRows: 5,
+      minRows: 2,
+
+      /**
+       *  Enable whether table outputs all data, or just user selection.
+       *
+       *  @property enableSelection
+       *  @type Boolean
+       *  @default false
+       */
+      enableSelection: false,
+
+      /**
+       *  Data selected by the user by dragging to select cells (if enableSelection is true)
+       *
+       *  @property userSelection
+       *  @type Array
+       */
+      userSelection: [],
+
       attached: function() {
         var self = this;
-        
-        // Adjust defaults depending on if in minimal mode or not
-        self.setDefaults();
 
         // Convert input to correct data structure, if need be
         self.convertInput();
-        
-        // Draw the table
-        self.drawTable();
 
-        
+        // Draw the table
+        self.inputChanged();
+
+        // Adjust defaults depending on if in minimal mode or not
+        self.setDefaults();
+
       },
-      drawTable: function(){
+      drawTable: function(){ 
         var self = this;
         var container = self.$.table;
+
         // Create empty table
         self.table = new Handsontable(container,
           {
@@ -197,18 +257,22 @@ Element providing solution to no problem in particular.
             // minSpareRowsCols: 1,
             minRows: self.minRows,
             minCols: self.minCols,
-            manualColumnResize: true,
-            manualColumnMove: false,
-            observeChanges: true,
-            readOnly: self.readOnly,
+
+            // these are causing errors when handsontable tries to parse shadowdom
             fillHandle: true,
-            colHeaders: false,
+            manualColumnResize: false,
+            manualRowResize: false,
+            // colHeaders: true,
+            // rowHeaders:true,
+
+            manualColumnMove: false,
+            observeChanges: false,
+            readOnly: self.readOnly,
             copyPaste: self.minimal ? false : true,
             contextMenu: true,
             columnSorting: false, // this is tricky when the first row sometimes represents column headers
             comments: false, // adds comments to context menu, but they don't currently work
             afterChange: function(changes, source) {
-              
               if(source =='paste'){ // i.e. there may not have been any input before
                 if(self.input.length>1){                  
                   self.pasteMoreData(changes);
@@ -217,12 +281,19 @@ Element providing solution to no problem in particular.
                 }
               } else if (source=='edit'){
                 self.tableData = self.numPages == 1 ? this.getInstance().getData() : self.tableData;;
-                self.fire('th-cell-edit', changes)
+                self.fire('lens-cell-edit', changes)
               }
-              self.tableDataChanged();
+              // self._calculateOutput();
             },
-            afterSelectionEnd: function(rowStart, colStart, rowEnd, colEnd){
+            afterSelectionEnd: function(rowStart, colStart, rowEnd, colEnd) {
               self.selectData(rowStart, colStart, rowEnd, colEnd);
+              self._calculateOutput();
+            },
+            afterDeselect: function(e) {
+              for (var i = 0; i < self.selectedCells.length; i++) {
+                self.selectedCells[i].classList.add('area');
+              }
+              self._calculateOutput();
             }
           });
 
@@ -232,29 +303,36 @@ Element providing solution to no problem in particular.
           rows[0].classList.add("title-row");
         }
       },
-      setDefaults: function(){
+      setDefaults: function() {
         var self = this;
         if (self.minimal){
           self.minRows = 0;
           self.minCols = 0;
           self.readOnly = true;
-          self.requireSelection = false;
           self.maxRows = Math.min(50, self.input.length) 
         } else {
           self.maxRows = self.input.length;
         }
       },
-      pasteMoreData: function(changes){
+      pasteMoreData: function(changes) {
         var self = this;
 
+        // if input length < changes.length, extend input
+        var lengthDiff = changes.length - self.input.length;
+        while (lengthDiff > 0) {
+          self.input.push([]);
+          lengthDiff--;
+        }
 
-          for (var i=0; i<changes.length; i++){
-            self.input[changes[i][0]][changes[i][1]] = changes[i][3];
-          }
-          self.inputChanged();
+        for (var i=0; i<changes.length; i++){
+          self.input[changes[i][0]][changes[i][1]] = changes[i][3];
+        }
+
+        self.inputChanged();
       },
-      inputChanged: function(){
+      inputChanged: function() {
         var self = this;
+        self._resetSelection();
 
         if(self.input && self.input.length>0){
           self.maxRows = self.input.length;
@@ -270,13 +348,35 @@ Element providing solution to no problem in particular.
           } else {
             self.drawTable();
           }
-          
+
+          self._calculateOutput();
         }
       },
-      currentPageChanged: function(){
+      _calculateOutput: function() {
+        var self = this;
+        var isFullTable = self.firstRowIsHeader ? 1 : 0;
+
+        // if one or fewer cells are selected, currentSelection = all data.
+        if (self.currentSelection.length <= 1+isFullTable && self.currentSelection[0].length <= 1) {
+          self.currentSelection = self.tableData;
+        }
+
+        // if JSON, output JSON otherwise output Table
+        if (self.outputType === 'json') {
+          self.userSelection = self.tableToJSON(self.currentSelection);
+          self.output = self.enableSelection ? self.userSelection : self.tableToJSON(self.tableData);
+        } else {
+          self.userSelection = self.currentSelection;
+          self.output = self.enableSelection ? self.userSelection : self.tableData;
+        }
+
+        // NOTE this is not currently in use, but may be in the future
+        self.fire('lens-output-ready', self.output);
+
+      },
+      currentPageChanged: function() {
         var self = this;
         self.table.loadData(self.paginate(self.tableData));
-
       },
       paginate: function(data){
         var self = this;
@@ -287,11 +387,12 @@ Element providing solution to no problem in particular.
             if (i === 0 || (i >= self.startRow && i <= self.endRow)){
               return el;
             }  
-        })
+        });
+
         return pageData;
 
       },
-      movePage: function(e, detail, selection){
+      movePage: function(e, detail, selection) {
         var self = this,
             newPage = parseInt(selection.dataset.page);
 
@@ -299,20 +400,23 @@ Element providing solution to no problem in particular.
           self.$.pageNum.value = newPage;
           self.currentPage = newPage;
         }
+
+        self.formatFirstRow();
       },
-      convertInput: function(){
+      convertInput: function() {
         var self = this;
           
         // Convert to array of arrays if not in that format
         if(self.input && self.input[0] && self.input[0].constructor != Array){
+
           // Case 1: each item is an object
           if (typeof(self.input[0])=='object'){
 
-            // If the object keys are just numbers, don't show them, otherwise do  
+            var keys = self._parseKeysFromSample(self.input);
 
-            var keys = Object.keys(self.input[0]);
+            // If the object keys are just numbers, don't show them, otherwise do  
             self.tableData = keys[0] == ["0"] ? [] : [keys];
-            
+
             // set maximum number of rows when in minimal mode.
 
             // var maxRows = self.minimal ? Math.min(50, self.input.length) : self.input.length;
@@ -324,7 +428,7 @@ Element providing solution to no problem in particular.
             }
 
           // Case 2: each item is a string (only one column without a col title)
-          } else if(typeof(self.input[0])=='string'){            
+          } else if(typeof(self.input[0])=='string'){
             self.tableData=[];
             for(var i=0;i<self.input.length;i++){
               self.tableData.push([self.input[i]]);
@@ -340,102 +444,222 @@ Element providing solution to no problem in particular.
 
         // TODO: Handle other scenarios
       },
-      tableDataChanged: function(){
+      selectData: function(rowStart, colStart, rowEnd, colEnd) {
         var self = this;
-        self.output = self.tableToJSON(self.tableData);
-      },
-      selectData: function(rowStart, colStart, rowEnd, colEnd){
-        var self = this;
-        
-        // Selects data in selected area
-        self.currentSelection = self.table.getData(rowStart, colStart, rowEnd, colEnd);
-        
-        // Selects DOM <td> elements in selected area
-        self.selectedCells = self.shadowRoot.querySelectorAll('td.area');
-      },
-      selectOutput: function(){
-        var self = this;
-        
-        // Clear highlighted section and re-highlight with current selection
-        self.clearSelection();
-        for(var i=0; i<self.selectedCells.length; i++){
-          self.selectedCells[i].classList.add('current-selection');
+
+        if (self.firstRowIsHeader) {
+
+          // if only headers are selected, select the entire columns
+          if (rowStart === 0 && rowEnd === 0) {
+            self.selectColumns(colStart, colEnd);
+            return;
+          }
+
+          // otherwise, do not include header row in selection
+          else if (rowStart === 0) {
+            rowStart = 1;
+          } else if (rowEnd === 0) {
+            rowEnd = 1;
+          }
         }
 
-        // Set output
-        if(self.outputType == 'json'){
-          self.output = self.tableToJSON(self.currentSelection);
-        } else {
-          self.output = self.currentSelection;
+        // Selects data in selected area
+        var tempSelection = self.table.getData(rowStart, colStart, rowEnd, colEnd);
+
+        if (self.firstRowIsHeader) {
+          // find header
+          var headers = self.table.getData(0, colStart, 0, colEnd);
+          // append header to this selection
+          tempSelection.splice(0, 0, headers[0]);
         }
+
+        // if selection is too small, then select the whole table
+        var isFullTable = self.firstRowIsHeader ? 1 : 0;
+        if (tempSelection.length <= 1+isFullTable && tempSelection[0].length <= 1) {
+          tempSelection = self.tableData;
+        }
+
+        self.currentSelection = tempSelection;
+
+        // Selects DOM <td> elements in selected area
+        self.selectedCells = self.shadowRoot.querySelectorAll('td.area');
+
+        self._calculateOutput();
       },
+
+      selectColumns: function(colStart, colEnd) {
+        var self = this;
+
+        // find header names/keys. If header is blank for some reason, use the string of the column.
+        var data = self.tableToJSON(self.tableData);
+        var origHeaders = self.table.getDataAtRow(0);
+        var headers = [];
+        var cStart = Math.min(colStart, colEnd);
+        var cEnd = Math.max(colStart, colEnd);
+        for (var h = cStart; h <= cEnd; h++) {
+          var header = origHeaders[h] ? origHeaders[h] : String(h);
+          headers.push(header);
+        }
+
+        var tempSelection = [];
+        tempSelection.push(headers);
+
+        // generate new selection with only selected header keys
+        for (var i = 0; i < data.length; i++) {
+          var newArr = [];
+          var obj = data[i];
+
+          for (var j = 0; j < headers.length; j++) {
+            var headerKey = headers[j];
+            var item = obj[headerKey];
+            newArr.push(item);
+          }
+          tempSelection.push(newArr);
+        }
+
+        self.currentSelection = tempSelection;
+        self._calculateOutput();
+
+      },
+
       clearSelection: function(){
         var self = this;
         var allCells = self.shadowRoot.querySelectorAll('td'); 
         for (var i=0; i<allCells.length; i++){
           allCells[i].classList.remove('current-selection');
+          allCells[i].classList.remove('area');
         }
       },
-      tableToJSON: function(tableData){
+      tableToJSON: function(tableData) {
         var self = this;
-        
-          var json = [];
-          if(self.firstRowIsHeader){
-        
-            for(var i=1; i<tableData.length; i++){
-              var row = {};
-              for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
-                if(tableData[0][index]){ // this condition leaves out blank columns
-                  if(tableData[i][index]){
-                    row[tableData[0][index]] = tableData[i][index]; 
-                  }
+        var json = [];
+
+        if(self.firstRowIsHeader) {
+          for(var i=1; i<tableData.length; i++){
+            var row = {};
+            for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
+              if(tableData[0][index]){ // this condition leaves out blank columns
+                if(tableData[i][index]){
+                  row[tableData[0][index]] = tableData[i][index]; 
                 }
               }
-              if (Object.keys(row).length > 0){ // this condition leaves out blank rows
-                json.push(row);
+              // if no header is found:
+              else if(tableData[i][index]) {
+                row[index] = tableData[i][index]; 
               }
             }
-          } else {
-            for(var i=0; i<tableData.length; i++){
-              var row = {};
-              for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
-                if(tableData[0][index]){ // this condition leaves out blank columns
-                  row[index] = tableData[i][index]; 
-                }
-              }
-              var columns = Object.keys(row);
-              if (columns.length > 0 || (columns.indexOf('0') > -1 && row['0'])){ // this condition leaves out blank rows 
-                  json.push(row);  
-              }
+            if (Object.keys(row).length > 0){ // this condition leaves out blank rows
+              json.push(row);
             }
           }
-          return json;
+        }
+
+        else {
+          for(var i=0; i<tableData.length; i++){
+            var row = {};
+            for(var index=0; index<tableData[0].length; index++){ // use keys from the first row
+              row[index] = tableData[i][index]; 
+            }
+            var columns = Object.keys(row);
+            if (columns.length > 0 || (columns.indexOf('0') > -1 && row['0'])){ // this condition leaves out blank rows 
+                json.push(row);
+            }
+          }
+        }
+
+        return json;
 
       },
-      toggleFirstRow: function(){
+      toggleFirstRow: function() {
         var self = this;
         self.firstRowIsHeader = self.firstRowIsHeader == true ? false : true;
       },
       firstRowIsHeaderChanged: function(){
         var self = this;
         self.formatFirstRow();
-        self.tableDataChanged();
+        self._calculateOutput();
       },
-      formatFirstRow: function(){
+      formatFirstRow: function() {
         var self = this;
         var firstRow = self.shadowRoot.querySelectorAll('tr')[0];
         if (self.firstRowIsHeader){
+          // firstRow.outerHTML = firstRow.outerHTML.replace(/tr/g,"THEAD");
           firstRow.classList.add("title-row");
+          firstRow.hidden = false;
         } else {
           firstRow.classList.remove("title-row");
+          if (self.currentPage > 1){
+            firstRow.hidden = true;
+          }
+          else {
+            // show first row if on first page, but dont make bold it with class title-row
+            firstRow.hidden = false;
+          }
         }
       },
-      prevPage: function(value){
+
+      prevPage: function(value) {
         return parseInt(value)-1;
       },
-      nextPage: function(value){
+      nextPage: function(value) {
         return parseInt(value)+1;
+      },
+      outputTypeChanged: function() {
+        var self = this;
+        self._calculateOutput();
+      },
+      _resetSelection: function() {
+        var self = this;
+        // used to output only the selection when outputType is 'table'
+        self.clearSelection();
+        self.selectedCells = [];
+        self.currentSelection = [ [] ];
+      },
+
+      toggleEnableSelection: function() {
+        var self = this;
+        self.enableSelection = self.enableSelection == true ? false : true;
+      },
+
+      enableSelectionChanged: function() {
+        var self = this;
+        self._resetSelection();
+        self._calculateOutput();
+      },
+
+      // determine keys for overall input by taking a sampling of input
+      // and adding Object.keys() from the first row of input (Headers)
+      // and then returning a set of the unique values from these two arrays
+      _parseKeysFromSample: function(data, sampleSize) {
+        var self = this;
+
+        // sampleSize ensures that we return keys even if first item in the column is null
+        if(!sampleSize) {
+          sampleSize = Math.min(3, data.length);
+        }
+
+        var sample = _.sample(data, sampleSize).reduce(function(keysSoFar, obj) {
+          return Object.keys(obj);
+        })
+
+        // add keys, which may include null items
+        var keyArr = sample.concat( Object.keys(self.input[0]) );
+
+        // make a set object with only the unique values
+        var set = {};
+        for (var i = 0; i < keyArr.length; i++) {
+          set[keyArr[i]] = true;
+        }
+
+        // return an array of unique values
+        var keys = [];
+        for (var item in set) {
+          keys.push(item);
+        }
+
+        return keys;
       }
+
     });
 
   </script>

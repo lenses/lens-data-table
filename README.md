@@ -1,8 +1,6 @@
 lens-data-table
 ================
 
-See the [component page](http://nishacodes.github.io/lens-data-table) for more information.
+A smart data table that allows input, selection, edit, delete and other functions
 
-## Getting Started
-
-We've put together a [guide for lens-data-table](http://www.polymer-project.org/docs/start/reusableelements.html) to help get you rolling.
+See the [component page](http://lenses.github.io/lens-data-table) for more information.
