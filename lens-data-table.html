@@ -334,8 +334,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         var self = this;
         self._resetSelection();
 
-        console.log('input changed!');
-        console.log(self.input);
         if(self.input && self.input.length>0){
           self.maxRows = self.input.length;
           self.convertInput();
@@ -372,7 +370,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           self.output = self.enableSelection ? self.userSelection : self.tableData;
         }
 
-        console.log(self.output);
         // NOTE this is not currently in use, but may be in the future
         self.fire('lens-output-ready', self.output);
 
@@ -660,7 +657,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           keys.push(item);
         }
 
-        console.log(keys);
         return keys;
       }
 
