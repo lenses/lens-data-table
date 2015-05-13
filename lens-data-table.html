@@ -411,16 +411,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           // Case 1: each item is an object
           if (typeof(self.input[0])=='object'){
 
-            var keyArr = self._parseKeysFromSample(self.input);
-            keyArr = keyArr.concat( Object.keys(self.input[0]) );
-            var set = {};
-            for (var i = 0; i < keyArr.length; i++) {
-              set[keyArr[i]] = true;
-            }
-            var keys = [];
-            for (var item in set) {
-              keys.push(item);
-            }
+            var keys = self._parseKeysFromSample(self.input);
 
             // If the object keys are just numbers, don't show them, otherwise do  
             self.tableData = keys[0] == ["0"] ? [] : [keys];
@@ -636,9 +627,12 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       },
 
       // determine keys for overall input by taking a sampling of input
+      // and adding Object.keys() from the first row of input (Headers)
+      // and then returning a set of the unique values from these two arrays
       _parseKeysFromSample: function(data, sampleSize) {
-        // var keys = Object.keys(self.input[0]);
+        var self = this;
 
+        // sampleSize ensures that we return keys even if first item in the column is null
         if(!sampleSize) {
           sampleSize = Math.min(3, data.length);
         }
@@ -647,7 +641,23 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           return Object.keys(obj);
         })
 
-        return sample;
+        // add keys, which may include null items
+        var keyArr = sample.concat( Object.keys(self.input[0]) );
+
+        // make a set object with only the unique values
+        var set = {};
+        for (var i = 0; i < keyArr.length; i++) {
+          set[keyArr[i]] = true;
+        }
+
+        // return an array of unique values
+        var keys = [];
+        for (var item in set) {
+          keys.push(item);
+        }
+
+        console.log(keys);
+        return keys;
       }
 
     });
