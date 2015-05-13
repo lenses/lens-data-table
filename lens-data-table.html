@@ -320,7 +320,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       },
       pasteMoreData: function(changes) {
         var self = this;
-
+        console.log(changes);
           for (var i=0; i<changes.length; i++){
             self.input[changes[i][0]][changes[i][1]] = changes[i][3];
           }
@@ -329,6 +329,9 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       inputChanged: function() {
         var self = this;
         self._resetSelection();
+
+        console.log('input changed!');
+        console.log(self.input);
         if(self.input && self.input.length>0){
           self.maxRows = self.input.length;
           self.convertInput();
@@ -365,6 +368,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           self.output = self.enableSelection ? self.userSelection : self.tableData;
         }
 
+        console.log(self.output);
         // NOTE this is not currently in use, but may be in the future
         self.fire('lens-output-ready', self.output);
 
@@ -407,7 +411,16 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
           // Case 1: each item is an object
           if (typeof(self.input[0])=='object'){
 
-            var keys = self._parseKeysFromSample(self.input);
+            var keyArr = self._parseKeysFromSample(self.input);
+            keyArr = keyArr.concat( Object.keys(self.input[0]) );
+            var set = {};
+            for (var i = 0; i < keyArr.length; i++) {
+              set[keyArr[i]] = true;
+            }
+            var keys = [];
+            for (var item in set) {
+              keys.push(item);
+            }
 
             // If the object keys are just numbers, don't show them, otherwise do  
             self.tableData = keys[0] == ["0"] ? [] : [keys];
@@ -627,7 +640,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         // var keys = Object.keys(self.input[0]);
 
         if(!sampleSize) {
-          sampleSize = Math.min(100, data.length);
+          sampleSize = Math.min(3, data.length);
         }
 
         var sample = _.sample(data, sampleSize).reduce(function(keysSoFar, obj) {
