@@ -295,10 +295,6 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
               }
               self._calculateOutput();
             }
-            // beforeKeyDown: function(e) {
-            //   // console.log(e);
-            //   // console.log('before key down');
-            // }
           });
 
         // Bold the first row if it represents column titles
@@ -320,11 +316,19 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
       },
       pasteMoreData: function(changes) {
         var self = this;
-        console.log(changes);
-          for (var i=0; i<changes.length; i++){
-            self.input[changes[i][0]][changes[i][1]] = changes[i][3];
-          }
-          self.inputChanged();
+
+        // if input length < changes.length, extend input
+        var lengthDiff = changes.length - self.input.length;
+        while (lengthDiff > 0) {
+          self.input.push([]);
+          lengthDiff--;
+        }
+
+        for (var i=0; i<changes.length; i++){
+          self.input[changes[i][0]][changes[i][1]] = changes[i][3];
+        }
+
+        self.inputChanged();
       },
       inputChanged: function() {
         var self = this;
