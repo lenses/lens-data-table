@@ -492,7 +492,7 @@ Built with <a href="handsontable.com" target="_blank">handsontable.js</a>.
         var cStart = Math.min(colStart, colEnd);
         var cEnd = Math.max(colStart, colEnd);
         for (var h = cStart; h <= cEnd; h++) {
-          var header = origHeaders[h].length > 0 ? origHeaders[h] : String(h);
+          var header = origHeaders[h] ? origHeaders[h] : String(h);
           headers.push(header);
         }
 
